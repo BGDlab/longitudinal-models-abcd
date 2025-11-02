@@ -841,8 +841,9 @@ cor_df$t2_long.p_adj <- p.adjust(cor_df$t2_long.p, method = "BH")
 ###plot
 #T1-T2
 #merge with atlas data
-plot_data_dkt <- merge(cor_df, ggseg::dk, by = "label")
-plot_data_aseg <- merge(cor_df, ggseg::aseg, by = "label")
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::aseg, by = "label")
 
 #Setting manual limits (could match the colorbar limits between different variables)
 (t1.t2_cor_dkt_plot <- ggplot(plot_data_dkt) +
@@ -861,6 +862,10 @@ plot_data_aseg <- merge(cor_df, ggseg::aseg, by = "label")
   labs(title = "T1-T2 cor"))
 
 #T2-Long
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t2_long.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t2_long.p_adj < 0.05), ggseg::aseg, by = "label")
+
 #Setting manual limits (could match the colorbar limits between different variables)
 (t2.long_cor_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
