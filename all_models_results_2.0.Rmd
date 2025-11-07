@@ -9,7 +9,7 @@ editor_options:
 #Main Setup
 ```{r setup, include=FALSE}
 save_tables <- TRUE
-code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/ABCD_premie_code/"
+code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
 save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/"
 data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
 knitr::opts_chunk$set(echo = TRUE)
@@ -36,7 +36,7 @@ library(growthstandards)
 library(gtsummary)
 library(svglite)
 
-source(paste0(code_path, "data_functions.R"))
+source(paste0(code_path, "load_data_fct.R"))
 
 #df to map variable names onto names displayed on figures
 name_mapping <- data.frame(
@@ -677,20 +677,24 @@ t2.full_test_df$table_group <- paste0(t2.full_test_df$matched_group, "_t2")
 names_no_centiles <- names(t1.full_test_df)[-grep("centiles", names(t1.full_test_df))]
 table1_df <- rbind(t1.full_test_df %>% select(all_of(names_no_centiles)), 
                    t2.full_test_df %>% select(all_of(names_no_centiles))) %>%
-  mutate(age_years = age/12)
+  mutate(age_years = age/12) %>%
+  mutate(bwpgs_zscore = as.numeric(scale(bw_pgs))) %>%
+  mutate(neonatal_comp_total = as.numeric(neonatal_comp_total))
 
 
 # Create Table 1 with additional variables
 table1 <- table1_df %>%
-  select(table_group, age_years, sex, gestAge, bw_pgs, birth_weight_oz_sum_adj, General_p.t1, General_p.t2) %>%
+  select(table_group, age_years, sex, gestAge, bwpgs_zscore, birth_weight_oz_sum_adj, neonatal_comp_total, General_p.t1, General_p.t2) %>%
   tbl_summary(
     by = table_group,
     statistic = list(
       all_continuous() ~ "{mean} ({sd})",
       all_categorical() ~ "{n} ({p}%)"
     ),
-    digits = c(bw_pgs, General_p.t1, General_p.t2) ~ function(x) format(x, digits = 3, scientific = TRUE),
-    missing = "ifany"
+    digits = c(bwpgs_zscore, General_p.t1, General_p.t2) ~ function(x) format(x, digits = 3, scientific = TRUE),
+    missing = "always",
+    missing_stat = "{N_nonmiss}", 
+    missing_text = "N known"
   ) %>%
   bold_labels()
 
@@ -9512,6 +9516,15 @@ write.csv(supp_betas_all, paste0(save_path, filename))
 ```
 #Neonatal complications supp table
 ```{r}
-abcd_full <- read_csv("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/abcd5.1_long_full_2.02025-09-26.csv")
-t1.full_test_df <- merge(t1.full_test_df, abcd_full %>% filter(eventname == "t1") %>% select(all_of(c("src_subject_id","devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p"))), by = "src_subject_id", all.x = TRUE)
+neonatal_vars <- c("devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p")
+abcd_neonatal <- read_csv("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/abcd_long_afterQC_neonatal_baseline.csv")
+#table for NAs and "don't know"s for each question (before splits)
+lapply(abcd_neonatal[, neonatal_vars], table, useNA = "ifany")
+#merge with t1 for post-split data Ns
+t1.full_test_df <- merge(t1.full_test_df, abcd_neonatal %>% select(all_of(c("src_subject_id","devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p"))), by = "src_subject_id", all.x = TRUE)
+#table for NAs and "don't know"s for each question (after splits -- removing more subjects)
+lapply(t1.full_test_df[, neonatal_vars], table, useNA = "ifany")
+ggplot(t1.full_test_df, aes(x = neonatal_comp_total)) + 
+  geom_bar() +
+  theme_minimal()
 ```
