@@ -214,6 +214,11 @@ if (!dir.exists(tableOne_folder)) dir.create(tableOne_folder)
 
 figure_panels_folder <- paste0(save_path, "figure_panels/")
 if (!dir.exists(figure_panels_folder)) dir.create(figure_panels_folder)
+
+panel_save <- function(plot, filename, extension, folder){
+  save_name <- paste0(folder, filename, ".", extension)
+  ggsave(save_name, plot = plot, dpi = 300)
+}
 ```
 #Data Setup
 Load all saved centiles data tables for t1, t2, and longitudinal
@@ -916,6 +921,31 @@ plot_data_aseg <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::aseg, by =
   labs(title = "T1-T2 cor"))
 
 
+panel_save(t1.t2_cor_dkt_plot, "t1_t2_dsk", "png", figure_panels_folder)
+panel_save(t1.t2_cor_aseg_plot, "t1_t2_aseg", "png", figure_panels_folder)
+
+#t1-long
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::aseg, by = "label")
+
+(t1.long_cor_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = t1_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void()+
+  labs(title = "T1-Long Cor"))
+
+(t1.long_cor_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = t1_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",limits = c(-1, 1)) +
+  theme_void() +
+  labs(title = "T1-Long Cor"))
+
+panel_save(t1.long_cor_dkt_plot, "t1_long_dsk", "png", figure_panels_folder)
+panel_save(t1.long_cor_aseg_plot, "t1_long_aseg", "png", figure_panels_folder)
 
 #T2-Long
 #merge with atlas data only regions that are significant in correlation
@@ -938,25 +968,9 @@ plot_data_aseg <- merge(cor_df %>% filter(t2_long.p_adj < 0.05), ggseg::aseg, by
   theme_void() +
   labs(title = "T2-Long Cor"))
 
-#t1-long
-#merge with atlas data only regions that are significant in correlation
-plot_data_dkt <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::dk, by = "label")
-plot_data_aseg <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::aseg, by = "label")
+panel_save(t2.long_cor_dkt_plot, "t2_long_dsk", "png", figure_panels_folder)
+panel_save(t2.long_cor_aseg_plot, "t2_long_aseg", "png", figure_panels_folder)
 
-(t1.long_cor_dkt_plot <- ggplot(plot_data_dkt) +
-  geom_brain(atlas = dk, 
-             position = position_brain(hemi ~ side),
-             aes(fill = t1_long.cor)) +
-  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
-  theme_void()+
-  labs(title = "T1-Long Cor"))
-
-(t1.long_cor_aseg_plot <- ggplot(plot_data_aseg) +
-  geom_brain(atlas = aseg,
-             aes(fill = t1_long.cor)) +
-  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",limits = c(-1, 1)) +
-  theme_void() +
-  labs(title = "T1-Long Cor"))
 ```
 ##CMD-Centile Mahalanobis Distance
 for t1, t2, and t3
@@ -995,24 +1009,24 @@ cor.test(test.df$t1.cmd, test.df$long.cmd)
 cor.test(test.df$t2.cmd, test.df$long.cmd)
 
 #Plots for CMD correlations
-t1_t2_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = t2.cmd)) + 
+(t1_t2_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = t2.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal() + labs (x = "timepoint 1", y = "timepoint 2")
+  theme_minimal() + labs (x = "timepoint 1", y = "timepoint 2"))
 
-t1_long_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = long.cmd)) + 
+(t1_long_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = long.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal() + labs (x = "timepoint 1", y = "conditional longitudinal")
+  theme_minimal() + labs (x = "timepoint 1", y = "conditional longitudinal"))
 
-t2_long_cmd <- ggplot(data = test.df, mapping = aes(x = t2.cmd, y = long.cmd)) + 
+(t2_long_cmd <- ggplot(data = test.df, mapping = aes(x = t2.cmd, y = long.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal()  + labs (x = "timepoint 2", y = "conditional longitudinal")
+  theme_minimal()  + labs (x = "timepoint 2", y = "conditional longitudinal"))
 
-ggsave(plot=t1_t2_cmd, filename='t1_t2_cmd_plot.svg', dpi=300, width=12, height=8)
-ggsave(plot=t1_long_cmd, filename='t1_long_cmd_plot.svg', dpi=300, width=12, height=8)
-ggsave(plot=t2_long_cmd, filename='t2_long_cmd_plot.svg', dpi=300, width=12, height=8)
+ggsave(plot=t1_t2_cmd, filename=paste0(figure_panels_folder,'t1_t2_cmd_plot.svg'), dpi=300, width=12, height=8)
+ggsave(plot=t1_long_cmd, filename=paste0(figure_panels_folder,'t1_long_cmd_plot.svg'), dpi=300, width=12, height=8)
+ggsave(plot=t2_long_cmd, filename=paste0(figure_panels_folder,'t2_long_cmd_plot.svg'), dpi=300, width=12, height=8)
 ```
 #Plots for Fig 1
 ##Choose individuals to plot
@@ -1173,10 +1187,11 @@ t1.sub4_plot <- t1.sub4_plot + geom_point(aes(x = sub4_age.t1, y = sub4.t1$smri_
   )
 
 #Save the panels
-ggsave(plot=t1.sub1_plot, filename='t1_sub1.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t1.sub2_plot, filename='t1_sub2.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t1.sub3_plot, filename='t1_sub3.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t1.sub4_plot, filename='t1_sub4.svg', dpi=300, width=12, height=8, device = "svg")
+
+ggsave(plot=t1.sub1_plot, filename=paste0(figure_panels_folder,'t1_sub1.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t1.sub2_plot, filename=paste0(figure_panels_folder,'t1_sub2.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t1.sub3_plot, filename=paste0(figure_panels_folder,'t1_sub3.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t1.sub4_plot, filename=paste0(figure_panels_folder,'t1_sub4.svg'), dpi=300, width=12, height=8, device = "svg")
 ```
 ##t2 plot
 ###per subject
@@ -1317,10 +1332,10 @@ t2.sub4_plot <- t2.sub4_plot + geom_point(aes(x = sub4_age.t2, y = sub4.t2$smri_
   )
 
 #Save the panels
-ggsave(plot=t2.sub1_plot, filename='t2_sub1.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t2.sub2_plot, filename='t2_sub2.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t2.sub3_plot, filename='t2_sub3.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=t2.sub4_plot, filename='t2_sub4.svg', dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t2.sub1_plot, filename=paste0(figure_panels_folder,'t2_sub1.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t2.sub2_plot, filename=paste0(figure_panels_folder,'t2_sub2.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t2.sub3_plot, filename=paste0(figure_panels_folder,'t2_sub3.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=t2.sub4_plot, filename=paste0(figure_panels_folder,'t2_sub4.svg'), dpi=300, width=12, height=8, device = "svg")
 ```
 ##longitudinal plot
 ###per subject
@@ -1461,10 +1476,10 @@ long.sub4_plot <- long.sub4_plot + geom_point(aes(x = sub4_age.long, y = sub4.lo
   )
 
 #Save the panels
-ggsave(plot=long.sub1_plot, filename='long_sub1.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=long.sub2_plot, filename='long_sub2.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=long.sub3_plot, filename='long_sub3.svg', dpi=300, width=12, height=8, device = "svg")
-ggsave(plot=long.sub4_plot, filename='long_sub4.svg', dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=long.sub1_plot, filename=paste0(figure_panels_folder,'long_sub1.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=long.sub2_plot, filename=paste0(figure_panels_folder,'long_sub2.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=long.sub3_plot, filename=paste0(figure_panels_folder,'long_sub3.svg'), dpi=300, width=12, height=8, device = "svg")
+ggsave(plot=long.sub4_plot, filename=paste0(figure_panels_folder,'long_sub4.svg'), dpi=300, width=12, height=8, device = "svg")
 ```
 ##Put plots together
 ```{r}
@@ -1539,7 +1554,7 @@ final_grid <- plot_grid(final_grid,xlab, ncol = 1, rel_heights = c(1, 0.05))
 print(final_grid)
 
 #save plot grid
-filename_fig1 <- paste0(save_path, "Fig1.svg")
+filename_fig1 <- paste0(figure_panels_folder, "Fig1.svg")
 ggsave(plot=final_grid, filename=filename_fig1, dpi=300, width=12, height=8)
 ```
 #Plots for Fig 2/Fig 3/Fig 4 and supplements
