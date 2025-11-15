@@ -12,7 +12,7 @@ diagnostics <- TRUE
 generate <- FALSE
 save_fits <- TRUE
 save_best_models <- TRUE
-plot <- TRUE
+plot <- FALSE
 code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
 fits_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
 data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
@@ -527,7 +527,6 @@ sOne_plots_wp <- vector(mode = "list", length = dim(sOne_best)[1])
 sOne_wp_table <- data.frame(matrix(NA, nrow = dim(sOne_best)[1], ncol = 5))
 names(sOne_wp_table) <- c("n", "n_outer", "pcnt", "phenotype", "label")
 for (i  in 1:length(best_models_One)) {
-  #print(deparse(model$mu.formula))
   model <- best_models_One[[i]]
   phenotype <- as.character(model$mu.terms[[2]])
   title <- name_mapping$region_name[match(phenotype, name_mapping$abbreviation)]
@@ -555,7 +554,6 @@ print(paste0("Percent of models with <5% points outside the curved wp lines: ", 
 ####worm plots
 ```{r}
 if(diagnostics == TRUE){
-plot <- FALSE
 sTwo_plots_wp <- vector(mode = "list", length = dim(sTwo_best)[1])
 sTwo_wp_table <- data.frame(matrix(NA, nrow = dim(sTwo_best)[1], ncol = 5))
 names(sTwo_wp_table) <- c("n", "n_outer", "pcnt", "phenotype", "label")
@@ -582,13 +580,12 @@ for(k in 1:(length(breaks)-1)){
 }
 }
 }
-print(paste0("Percent of models with <5% points outside the curved wp lines: ", sum(sOne_wp_table$pcnt < 0.05)/dim(sOne_wp_table)[1]))
+print(paste0("Percent of models with <5% points outside the curved wp lines: ", sum(sTwo_wp_table$pcnt < 0.05)/dim(sTwo_wp_table)[1]))
 ```
 ##cent-cdf
 ```{r}
 if(diagnostics == TRUE){
 print <- TRUE
-
 centcdf_one <- setNames(data.frame(matrix(ncol = 3, nrow = dim(sOne_best)[1])), c("ph", "cdfcor_train", "cdfcor_test"))
 centcdf_two <- setNames(data.frame(matrix(ncol = 3, nrow = dim(sTwo_best)[1])), c("ph", "cdfcor_train", "cdfcor_test"))
 cdf_expected <- c(0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99)
@@ -611,19 +608,15 @@ og_df_two <- sTwo_train_df %>% select(c("age", "sex", "site", model_two$mu.formu
 #save correlation with expected cdf values
 model <- model_one 
 out_train_one <- suppressMessages(cent_cdf(model_one, og_df_one))$data
-#out_test_one <- suppressMessages(cent_cdf(model_one, sTwo_test_df))
 centcdf_one$ph[i] <- title_one
 centcdf_one$cdfcor_train[i] <- (cor.test(out_train_one$empirical, out_train_one$fitted)$estimate)
-#centcdf_one$cdfcor_test[i] <- (cor.test(as.numeric(out_test_one[1,]), cdf_expected)$estimate)
 
 #calculate predicted centiles distribution for sTwo models, using sTwo train dataset, and sOne test dataset
 #save correlation with expected cdf values
 model <- model_two
 out_train_two <- suppressMessages(cent_cdf(model_two, og_df_two))$data
-#out_test_two <- suppressMessages(cent_cdf(model_two, sOne_test_df))
 centcdf_two$ph[i] <- title_two
 centcdf_two$cdfcor_train[i] <-  (cor.test(out_train_two$empirical, out_train_two$fitted)$estimate)
-#centcdf_two$cdfcor_test[i] <- (cor.test(as.numeric(out_test_two[1,]), cdf_expected)$estimate)
 
 
 if (print == TRUE){
@@ -751,13 +744,12 @@ kstest_two$p_adj <- p.adjust(kstest_two$p_value, method = "BH")
 kstest_two$label <- name_mapping$region_name[match(sub("_centiles","",rownames(kstest_two)), name_mapping$abbreviation)]
 
 kstest_two %>% filter(p_adj < 0.05) %>% select(label)
-
 ```
 #Save Parameter Table for Best Models
 ##sOne
 ```{r}
 sOne_model_params_df <- data.frame(matrix(nrow = length(best_models_One), ncol = 18))
-names(sOne_model_params_df) <- c("group","pheno", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
+names(sOne_model_params_df) <- c("group","column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
                                  "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
                                  "sigma_intercept", "sigma_age", "sigma_sexM", 
                                  "nu_intercept", "nu_age", "nu_sexM", 
@@ -768,7 +760,7 @@ for (i in 1:length(best_models_One)){
   sOne_model_params_df$family[i] <- family(model)[[1]]
   sOne_model_params_df$BIC[i] <- BIC(model)
   phenotype <- as.character(formula(model)[[2]])
-  sOne_model_params_df$pheno[i] <- phenotype
+  sOne_model_params_df$column_name[i] <- phenotype
   #Gather parameters
   ##mu
   sOne_model_params_df$mu_intercept[i] <- model$mu.coefficients[["(Intercept)"]]
@@ -790,28 +782,41 @@ for (i in 1:length(best_models_One)){
   sOne_model_params_df$tau_intercept[i] <- model$tau.coefficients[["(Intercept)"]]
 }
 
-sOne_model_params_df$group <- ifelse(sOne_model_params_df$pheno %in% all_global_phenotypes, "global", "region")
+sOne_model_params_df$group <- ifelse(sOne_model_params_df$column_name %in% all_global_phenotypes, "global", "region")
 
-##save table as csv
-filename <- "t1.sOne.modelparams.csv"
-if (!dir.exists(paste0(fits_path, "model_params_tables_check/"))) dir.create(paste0(fits_path, "model_params_tables/"))
-write.csv(sOne_model_params_df, paste0(fits_path, "model_params_tables_check/", filename))
-```
-##sTwo
-```{r}
-sTwo_model_params_df <- data.frame(matrix(nrow = length(best_models_Two), ncol = 18))
-names(sTwo_model_params_df) <- c("group","pheno", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
+column_order <- c("group","phenotype", "column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
                                  "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
                                  "sigma_intercept", "sigma_age", "sigma_sexM", 
                                  "nu_intercept", "nu_age", "nu_sexM", 
                                  "tau_intercept")
 
-for (i in 1:length(best_models_Two)){
-  model = best_models_Two[[i]]
+sOne_model_params_df <- merge(sOne_model_params_df, name_mapping, by.x = "column_name", by.y = "abbreviation", all.x = TRUE, all.y = FALSE)
+
+sOne_model_params_df <- sOne_model_params_df %>% 
+  rename(phenotype = "region_name") %>%
+  select(all_of(column_order)) %>%
+  arrange(group)
+  
+##save table as csv
+filename <- "t1.sOne.modelparams.csv"
+if (!dir.exists(paste0(fits_path, "model_params_tables/"))) dir.create(paste0(fits_path, "model_params_tables/"))
+write.csv(sOne_model_params_df, paste0(fits_path, "model_params_tables/", filename))
+```
+##sTwo
+```{r}
+sTwo_model_params_df <- data.frame(matrix(nrow = length(best_models_One), ncol = 18))
+names(sTwo_model_params_df) <- c("group","column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
+                                 "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
+                                 "sigma_intercept", "sigma_age", "sigma_sexM", 
+                                 "nu_intercept", "nu_age", "nu_sexM", 
+                                 "tau_intercept")
+
+for (i in 1:length(best_models_One)){
+  model = best_models_One[[i]]
   sTwo_model_params_df$family[i] <- family(model)[[1]]
   sTwo_model_params_df$BIC[i] <- BIC(model)
   phenotype <- as.character(formula(model)[[2]])
-  sTwo_model_params_df$pheno[i] <- phenotype
+  sTwo_model_params_df$column_name[i] <- phenotype
   #Gather parameters
   ##mu
   sTwo_model_params_df$mu_intercept[i] <- model$mu.coefficients[["(Intercept)"]]
@@ -833,10 +838,23 @@ for (i in 1:length(best_models_Two)){
   sTwo_model_params_df$tau_intercept[i] <- model$tau.coefficients[["(Intercept)"]]
 }
 
-sTwo_model_params_df$group <- ifelse(sTwo_model_params_df$pheno %in% all_global_phenotypes, "global", "region")
+sTwo_model_params_df$group <- ifelse(sTwo_model_params_df$column_name %in% all_global_phenotypes, "global", "region")
 
+column_order <- c("group","phenotype", "column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
+                                 "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
+                                 "sigma_intercept", "sigma_age", "sigma_sexM", 
+                                 "nu_intercept", "nu_age", "nu_sexM", 
+                                 "tau_intercept")
+
+sTwo_model_params_df <- merge(sTwo_model_params_df, name_mapping, by.x = "column_name", by.y = "abbreviation", all.x = TRUE, all.y = FALSE)
+
+sTwo_model_params_df <- sTwo_model_params_df %>% 
+  rename(phenotype = "region_name") %>%
+  select(all_of(column_order)) %>%
+  arrange(group)
+  
 ##save table as csv
 filename <- "t1.sTwo.modelparams.csv"
-if (!dir.exists(paste0(fits_path, "model_params_tables_check/"))) dir.create(paste0(fits_path, "model_params_tables/"))
-write.csv(sTwo_model_params_df, paste0(fits_path, "model_params_tables_check/", filename))
+if (!dir.exists(paste0(fits_path, "model_params_tables/"))) dir.create(paste0(fits_path, "model_params_tables/"))
+write.csv(sTwo_model_params_df, paste0(fits_path, "model_params_tables/", filename))
 ```
