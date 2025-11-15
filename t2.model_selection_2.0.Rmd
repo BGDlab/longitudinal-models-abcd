@@ -8,12 +8,13 @@ editor_options:
 ---
 #Main Setup
 ```{r setup, include=FALSE}
-diagnostics <- FALSE
+diagnostics <- TRUE
 generate <- FALSE
 save_fits <- FALSE
-code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/ABCD_premie_code/"
-fits_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/"
-data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/"
+plot <- TRUE
+code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
+fits_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
+data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
 knitr::opts_chunk$set(echo = TRUE)
 #Load libraries
 library(dplyr)
@@ -31,7 +32,7 @@ library(purrr)
 
 source(paste0(code_path, "inspect_model_fits.R"))
 source(paste0(code_path, "generate_gamlss_model_fct.R"))
-source(paste0(code_path, "load_data_fct.R"))
+source(paste0(code_path, "data_functions.R"))
 
 source(paste0(code_path, "pred_og_centile_EK.R"))
 source(paste0(code_path, "wp_taki_EK.R"))
@@ -200,14 +201,13 @@ pull <- function(data, var) {
 }
 ```
 
-
 #Generate Models
 ```{r}
 #generate = TRUE
 if (generate == TRUE){
 family_set <- c("BCT")
 phenotype_set <- phenotypes_to_fit
-out_folder <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0/"
+out_folder <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0/"
 
 terms_mu = c("~1", "age", "sex", "random(site)")
 terms_sigma = c("~1", "age", "sex")
@@ -227,7 +227,7 @@ generate_gamlss_models(phenotype_set,
 ##Generate additional models with age:sex interaction term
 ```{r}
 if (generate == TRUE){
-  models_folder <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0/"
+  models_folder <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0/"
   models <- list.files(models_folder, full.names = TRUE)
   ind <- stringr::str_extract(basename(models), "\\d+")
   end_ind <- max(as.numeric(ind))
@@ -247,10 +247,10 @@ if (generate == TRUE){
 ##Commands to fit the models
 Run fits submitting an array job.
 split 1
-sbatch array_script_submit.sh submit_gamlss_fits_ABCD_ONE.sh /mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0 "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/abcd_long_Onetrain2025-06-16.csv" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t2_BCT_vol_splitONE_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t2_BCT_vol_splitONE_2.0/gamlss_fits_stats" "t2"
+sbatch array_script_submit.sh submit_gamlss_fits_ABCD_ONE.sh /mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0 "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/abcd_long_Onetrain2025-06-16.csv" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_fits_t2_BCT_vol_splitONE_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_fits_t2_BCT_vol_splitONE_2.0/gamlss_fits_stats" "t2"
 
 split 2
-sbatch array_script_submit.sh submit_gamlss_fits_ABCD_TWO.sh /mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0 "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_models_t2_BCT_vol_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/abcd_long_Twotrain2025-06-16.csv" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t2_BCT_vol_splitTWO_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t2_BCT_vol_splitTWO_2.0/gamlss_fits_stats" "t2"
+sbatch array_script_submit.sh submit_gamlss_fits_ABCD_TWO.sh /mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0 "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_models_t2_BCT_vol_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/abcd_long_Twotrain2025-06-16.csv" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_fits_t2_BCT_vol_splitTWO_2.0/" "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/gamlss_fits_t2_BCT_vol_splitTWO_2.0/gamlss_fits_stats" "t2"
 #Data Setup
 ##Define files
 ```{r}
@@ -260,10 +260,10 @@ splitTwo_folder <- paste0(fits_path, "gamlss_fits_t2_BCT_vol_splitTWO_2.0/")
 
 sOne_fits_stats_filename <- paste0(splitOne_folder, "gamlss_fits_stats_all.csv")
 sTwo_fits_stats_filename <- paste0(splitTwo_folder, "gamlss_fits_stats_all.csv")
-splitOne_train_filename <- paste0(data_path, "abcd_long_Onetrain2025-06-16.csv")
-splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-06-16.csv")
-splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-06-16.csv")
-splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-06-16.csv")
+splitOne_train_filename <- paste0(data_path, "abcd_long_Onetrain2025-09-26.csv")
+splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
+splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
+splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
 ```
 ##Load data frames and clean them up
 ```{r}
