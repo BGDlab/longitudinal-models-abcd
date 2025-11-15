@@ -10,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 save_tables <- TRUE
 code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
-save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/"
+save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
 data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
 knitr::opts_chunk$set(echo = TRUE)
 #Load libraries
@@ -201,13 +201,19 @@ plot_data_aseg <- merge(name_mapping, ggseg::aseg, by.x = "region_name", by.y = 
 regions_notplotted <- name_mapping[!(name_mapping$region_name %in% plot_data_dkt$region_name) & !(name_mapping$region_name %in% plot_data_aseg$region_name),] %>% filter(abbreviation %in% phenotypes_for_MC)
 write.csv(regions_notplotted, "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/regions_notplotted.csv")
 ```
-#Create folder for saving beta tables
+#Create folder for saving output
 ```{r}
 betas_folder <- paste0(save_path, "full_betas/")
 if (!dir.exists(paste0(save_path, "full_betas/"))) dir.create(betas_folder)
 
 dkt_folder <- paste0(save_path, "dkt_betas/")
 if (!dir.exists(dkt_folder)) dir.create(dkt_folder)
+
+tableOne_folder <- paste0(save_path, "table_one/")
+if (!dir.exists(tableOne_folder)) dir.create(tableOne_folder)
+
+figure_panels_folder <- paste0(save_path, "figure_panels/")
+if (!dir.exists(figure_panels_folder)) dir.create(figure_panels_folder)
 ```
 #Data Setup
 Load all saved centiles data tables for t1, t2, and longitudinal
@@ -224,7 +230,7 @@ splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
 splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
 splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
 
-t1.centiles_filename <- paste0(save_path, "centiles_calculated/t1.volume_centiles_2025-07-07.csv")
+t1.centiles_filename <- paste0(save_path, "centiles_calculated/t1.volume_centiles_2025-11-15.csv")
 ```
 ###Load data frames and clean them up
 ```{r}
@@ -316,7 +322,7 @@ splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
 splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
 splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
 
-t2.centiles_filename <- paste0(save_path, "centiles_calculated/t2.volume_centiles_2025-07-08.csv")
+t2.centiles_filename <- paste0(save_path, "centiles_calculated/t2.volume_centiles_2025-11-15.csv")
 ```
 ### Load data frames and clean them up
 ```{r}
@@ -413,7 +419,7 @@ long.splitTwo_train_filename <- paste0(data_path, "abcd_wide_Twotrain2025-10-03.
 long.splitOne_test_filename <- paste0(data_path, "abcd_wide_Onetest2025-10-03.csv")
 long.splitTwo_test_filename <- paste0(data_path, "abcd_wide_Twotest2025-10-03.csv")
 
-long.centiles_filename <- paste0(save_path, "centiles_calculated/long.volume_centiles_2025-07-08.csv")
+long.centiles_filename <- paste0(save_path, "centiles_calculated/long.volume_centiles_2025-11-15.csv")
 ```
 ###Load data frames and clean them up
 ```{r}
@@ -691,7 +697,9 @@ table1_df <- rbind(t1.full_test_df %>% select(all_of(names_no_centiles)),
                    t2.full_test_df %>% select(all_of(names_no_centiles))) %>%
   mutate(age_years = age/12) %>%
   mutate(bwpgs_zscore = as.numeric(scale(bw_pgs))) %>%
-  mutate(neonatal_comp_total = as.numeric(neonatal_comp_total))
+  mutate(neonatal_comp_total = as.numeric(neonatal_comp_total)) %>%
+  mutate(table_group = factor(table_group, levels = c("1_t1", "2_t1", "1_t2", "2_t2"))) %>%
+  arrange(table_group)
 
 
 # Create Table 1 with additional variables
@@ -715,7 +723,7 @@ table1
 
 table1_save <- as_tibble(table1)
 
-write.csv(table1_save, paste0(save_path, "Table_One_", Sys.Date(),".csv"))
+write.csv(table1_save, paste0(tableOne_folder, "Table_One_", Sys.Date(),".csv"))
 
 #Neonatal comp total is added as a categorical (I can't fix the function above to see it as continuous), want to include as a continuous -- calculate mean and SD manually here.
 table1_df %>%
@@ -734,7 +742,9 @@ table1_sup <- table1_df %>%
       all_categorical() ~ "{n} ({p}%)"
     ),
     digits = c(bw_pgs) ~ function(x) format(x, digits = 3, scientific = TRUE),
-    missing = "ifany"
+    missing = "always",
+    missing_stat = "{N_nonmiss}", 
+    missing_text = "N known"
   ) %>%
   bold_labels()
 
@@ -743,7 +753,7 @@ table1_sup
 
 table1_sup_save <- as_tibble(table1_sup)
 
-write.csv(table1_sup_save, paste0(save_path, "Table_One_Supplement_", Sys.Date(), ".csv"))
+write.csv(table1_sup_save, paste0(tableOne_folder, "Table_One_Supplement_", Sys.Date(), ".csv"))
 ```
 #Load Global Phenotype Models
 ##t1 global phenotype models
@@ -856,6 +866,9 @@ for(i in 1:length_names){
   plots.t1[[i]]<- ggplot(data = df, mapping = aes(x = t1.vector, y = long.vector, color = t2.vector)) + geom_point(aes(alpha = 0.3)) + ggtitle(title)
   names(plots.t1)[i] <- title
   #Correlations between centile scores
+  ##Set infinite to NA
+  df <- df %>% 
+  mutate(across(all_of(c("t1.vector", "t2.vector", "long.vector")), ~ replace(., is.infinite(.), NaN)))
   t1_t2.cor_test <- cor.test(df$t1.vector, df$t2.vector)
   t1_long.cor_test <- cor.test(df$t1.vector, df$long.vector)
   t2_long.cor_test <- cor.test(df$t2.vector, df$long.vector)
@@ -871,9 +884,13 @@ for(i in 1:length_names){
 cor_df$t1_t2.p_adj <- p.adjust(cor_df$t1_t2.p, method = "BH")
 cor_df$t1_long.p_adj <- p.adjust(cor_df$t1_long.p, method = "BH")
 cor_df$t2_long.p_adj <- p.adjust(cor_df$t2_long.p, method = "BH")
+
+print(paste0("Correlation Coef Range t1-t2 centiles: ", range(cor_df[cor_df$t1_t2.p_adj < 0.05,]$t1_t2.cor)))
+print(paste0("Correlation Coef Range t1-long centiles: ", range(cor_df[cor_df$t1_long.p_adj < 0.05,]$t1_long.cor)))
+print(paste0("Correlation Coef Range t2-long centiles: ", range(cor_df[cor_df$t2_long.p_adj < 0.05,]$t2_long.cor)))
 ```
 
-##Plot/Inspect Correlations between centile scores
+##Plot/Inspect Correlations between centile scores on surface maps
 ```{r}
 ###plot
 #T1-T2
@@ -897,6 +914,8 @@ plot_data_aseg <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::aseg, by =
   scale_fill_gradient2(low = "white", high = "#D65F5F", limits = c(-1, 1)) +
   theme_void() +
   labs(title = "T1-T2 cor"))
+
+
 
 #T2-Long
 #merge with atlas data only regions that are significant in correlation
