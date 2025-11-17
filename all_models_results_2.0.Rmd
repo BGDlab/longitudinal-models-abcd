@@ -1769,12 +1769,6 @@ panel_save(t1.ga_aseg_plot, "ga_38term_t1_aseg", "pdf", figure_panels_folder)
 sum(!is.na(t1.full_test_df$birth_weight_oz_sum_adj))
 df <- as.data.frame(t1.full_test_df[,"src_subject_id"])
 df$bw_zscore <- scale(t1.full_test_df$birth_weight_oz_sum_adj)
-
-#Global models save
-bw_global_models_list <- lapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, "_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
   
 #Global phenotypes -- save betas and p-values
 bw_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
@@ -1792,12 +1786,6 @@ bw_reg_table_global.t1$bw_p_adj <- p.adjust(bw_reg_table_global.t1$bw_p, method 
 bw_reg_table_global.t1_sig_MC <- bw_reg_table_global.t1 %>% filter(bw_p_adj < 0.05)
 
 bw_reg_table_global.t1_sig_MC
-
-#Regional models save
-bw_regional_models_list <- lapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
 
 #Regional phenotypes -- save betas and p-values
 bw_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
@@ -2172,7 +2160,7 @@ panel_save(t1.neocomp_dkt_plot, "neocomp_t1_dkt", "pdf", figure_panels_folder)
 panel_save(t1.neocomp_aseg_plot, "neocomp_t1_aseg", "pdf", figure_panels_folder)
 }
 ```
-###general P-factor
+###general P-factor timepoint 1
 ####linear regressions
 ```{r}
 sum(!is.na(t1.full_test_df$General_p.t1))
@@ -2273,23 +2261,23 @@ panel_save(t1.gp_aseg_plot, "gp_t1_aseg", "pdf", figure_panels_folder)
 ```{r}
 sum(!is.na(t1.full_test_df$General_p_change) & !is.na(t1.full_test_df$General_p.t1))
 gp_change_zscore <- scale(t1.full_test_df$General_p_change)
-gp_change_baseline_zscore <- scale(t1.full_test_df$General_p.t1)
+gp_baseline_zscore <- scale(t1.full_test_df$General_p.t1)
 
 #Global Phenotypes
 gp_change_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
   x_zscore <- qnorm(x)
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  lm <- lm(x_zscore ~ gp_change_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
 gp_change_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(gp_change_reg_table_global.t1)), name_mapping$abbreviation)]
 
 gp_change_reg_table_global.t1_sig <- gp_change_reg_table_global.t1 %>% filter(gp_change_p < 0.05)
 gp_change_reg_table_global.t1$gp_change_p_adj <- p.adjust(gp_change_reg_table_global.t1$gp_change_p, method = "BH")
-gp_change_reg_table_global.t1$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_global.t1$gp_change_base_p, method = "BH")
+gp_change_reg_table_global.t1$gp_base_p_adj <- p.adjust(gp_change_reg_table_global.t1$gp_base_p, method = "BH")
 gp_change_reg_table_global.t1_sig_MC <- gp_change_reg_table_global.t1 %>% filter(gp_change_p_adj < 0.05)
 
 gp_change_reg_table_global.t1_sig_MC
@@ -2298,17 +2286,17 @@ gp_change_reg_table_global.t1_sig_MC
 gp_change_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
   x_zscore <- qnorm(x)
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  lm <- lm(x_zscore ~ gp_change_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
 gp_change_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(gp_change_reg_table_full.t1)), name_mapping$abbreviation)]
 
 gp_change_reg_table_full.t1_sig <- gp_change_reg_table_full.t1 %>% filter(gp_change_p < 0.05)
 gp_change_reg_table_full.t1$gp_change_p_adj <- p.adjust(gp_change_reg_table_full.t1$gp_change_p, method = "BH")
-gp_change_reg_table_full.t1$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_full.t1$gp_change_base_p, method = "BH")
+gp_change_reg_table_full.t1$gp_base_p_adj <- p.adjust(gp_change_reg_table_full.t1$gp_base_p, method = "BH")
 gp_change_reg_table_full.t1_sig_MC <- gp_change_reg_table_full.t1 %>% filter(gp_change_p_adj < 0.05)
 
 #save tables of betas
@@ -2620,6 +2608,7 @@ ga_neocomp_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_
 
 ga_neocomp_reg_table_global.t1_sig <- ga_neocomp_reg_table_global.t1 %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_global.t1$ga_p_adj <- p.adjust(ga_neocomp_reg_table_global.t1$ga_p, method = "BH")
+ga_neocomp_reg_table_global.t1$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_global.t1$neocomp_p, method = "BH")
 ga_neocomp_reg_table_global.t1_sig_MC <- ga_neocomp_reg_table_global.t1 %>% filter(ga_p_adj < 0.05)
 
 ga_neocomp_reg_table_global.t1_sig_MC
@@ -2638,6 +2627,7 @@ ga_neocomp_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_ce
 
 ga_neocomp_reg_table_full.t1_sig <- ga_neocomp_reg_table_full.t1 %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_full.t1$ga_p_adj <- p.adjust(ga_neocomp_reg_table_full.t1$ga_p, method = "BH")
+ga_neocomp_reg_table_full.t1$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_full.t1$neocomp_p, method = "BH")
 ga_neocomp_reg_table_full.t1_sig_MC <- ga_neocomp_reg_table_full.t1 %>% filter(ga_p_adj < 0.05)
 
 #save tables of betas
@@ -2656,6 +2646,74 @@ filename_global <- paste0(output_folder, "ga_neocomp_global_t1.csv")
 filename_regional <- paste0(output_folder, "ga_neocomp_regional_t1.csv")
 write.csv(ga_neocomp_reg_table_global.t1, filename_global)
 write.csv(ga_neocomp_reg_table_full.t1, filename_regional)
+}
+```
+
+####GA coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+ga_neocomp_reg_table_full.t1_sig_MC[!(ga_neocomp_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(ga_neocomp_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, T1"))
+
+(t1.ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.t1_sig_MC %>% filter(ga_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.t1_sig_MC$ga_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.ga_neocomp_dkt_plot, "ga_neocomp_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.ga_neocomp_aseg_plot, "ga_neocomp_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(t1.neocomp_ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, T1"))
+
+(t1.neocomp_ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.t1[ga_neocomp_reg_table_full.t1$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(t1.neocomp_ga_neocomp_dkt_plot, "neocomp_ga_neocomp_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.neocomp_ga_neocomp_aseg_plot, "neocomp_ga_neocomp_t1_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###BW with neonatal comp as covar
@@ -2680,6 +2738,7 @@ bw_neocomp_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_
 
 bw_neocomp_reg_table_global.t1_sig <- bw_neocomp_reg_table_global.t1 %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_global.t1$bw_p_adj <- p.adjust(bw_neocomp_reg_table_global.t1$bw_p, method = "BH")
+bw_neocomp_reg_table_global.t1$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_global.t1$neocomp_p, method = "BH")
 bw_neocomp_reg_table_global.t1_sig_MC <- bw_neocomp_reg_table_global.t1 %>% filter(bw_p_adj < 0.05)
 
 bw_neocomp_reg_table_global.t1_sig_MC
@@ -2698,6 +2757,7 @@ bw_neocomp_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_ce
 
 bw_neocomp_reg_table_full.t1_sig <- bw_neocomp_reg_table_full.t1 %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_full.t1$bw_p_adj <- p.adjust(bw_neocomp_reg_table_full.t1$bw_p, method = "BH")
+bw_neocomp_reg_table_full.t1$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_full.t1$neocomp_p, method = "BH")
 bw_neocomp_reg_table_full.t1_sig_MC <- bw_neocomp_reg_table_full.t1 %>% filter(bw_p_adj < 0.05)
 
 #save tables of betas
@@ -2716,6 +2776,73 @@ filename_global <- paste0(output_folder, "bw_neocomp_global_t1.csv")
 filename_regional <- paste0(output_folder, "bw_neocomp_regional_t1.csv")
 write.csv(bw_neocomp_reg_table_global.t1, filename_global)
 write.csv(bw_neocomp_reg_table_full.t1, filename_regional)
+}
+```
+####BW coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+bw_neocomp_reg_table_full.t1_sig_MC[!(bw_neocomp_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(bw_neocomp_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, T1"))
+
+(t1.bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.t1_sig_MC %>% filter(bw_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.t1_sig_MC$bw_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.bw_neocomp_dkt_plot, "bw_neocomp_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.bw_neocomp_aseg_plot, "bw_neocomp_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(t1.neocomp_bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, T1"))
+
+(t1.neocomp_bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.t1 %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.t1[bw_neocomp_reg_table_full.t1$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(t1.neocomp_bw_neocomp_dkt_plot, "neocomp_bw_neocomp_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.neocomp_bw_neocomp_aseg_plot, "neocomp_bw_neocomp_t1_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###Gestational Age - SES as covar
@@ -4854,12 +4981,6 @@ panel_save(t2.ga_aseg_plot, "ga_38term_t2_aseg", "pdf", figure_panels_folder)
 sum(!is.na(t2.full_test_df$birth_weight_oz_sum_adj))
 df <- as.data.frame(t2.full_test_df[,"src_subject_id"])
 df$bw_zscore <- scale(t2.full_test_df$birth_weight_oz_sum_adj)
-
-#Global models save
-bw_global_models_list <- lapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, "_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
   
 #Global phenotypes -- save betas and p-values
 bw_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
@@ -4877,12 +4998,6 @@ bw_reg_table_global.t2$bw_p_adj <- p.adjust(bw_reg_table_global.t2$bw_p, method 
 bw_reg_table_global.t2_sig_MC <- bw_reg_table_global.t2 %>% filter(bw_p_adj < 0.05)
 
 bw_reg_table_global.t2_sig_MC
-
-#Regional models save
-bw_regional_models_list <- lapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
 
 #Regional phenotypes -- save betas and p-values
 bw_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
@@ -5238,14 +5353,14 @@ neocomp_reg_table_full.t2_sig_MC[!(neocomp_reg_table_full.t2_sig_MC$label %in% p
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = neocomp_beta)) +
-  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",                        limits = c(-0.23, 0.23)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
   theme_void() +
   labs(title = "neocomp t2"))
 
 (t2.neocomp_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = neocomp_beta)) +
-  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",                        limits = c(-0.23, 0.23)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
   theme_void() +
   labs(title = "neocomp t2"))
 
@@ -5257,7 +5372,7 @@ panel_save(t2.neocomp_dkt_plot, "neocomp_t2_dkt", "pdf", figure_panels_folder)
 panel_save(t2.neocomp_aseg_plot, "neocomp_t2_aseg", "pdf", figure_panels_folder)
 }
 ```
-###general P-factor
+###general P-factor timepoint 2
 ####linear regressions
 ```{r}
 sum(!is.na(t2.full_test_df$General_p.t2))
@@ -5356,25 +5471,25 @@ panel_save(t2.gp_aseg_plot, "gp_t2_aseg", "pdf", figure_panels_folder)
 ###General P-factor - change in P-factor -- including baseline P-factor as covar
 ####linear regressions
 ```{r}
-sum(!is.na(t2.full_test_df$General_p_change) & !is.na(t2.full_test_df$General_p.t2))
+sum(!is.na(t2.full_test_df$General_p_change) & !is.na(t2.full_test_df$General_p.t1))
 gp_change_zscore <- scale(t2.full_test_df$General_p_change)
-gp_change_baseline_zscore <- scale(t2.full_test_df$General_p.t2)
+gp_baseline_zscore <- scale(t2.full_test_df$General_p.t1)
 
 #Global Phenotypes
 gp_change_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
   x_zscore <- qnorm(x)
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  lm <- lm(x_zscore ~ gp_change_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
 gp_change_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(gp_change_reg_table_global.t2)), name_mapping$abbreviation)]
 
 gp_change_reg_table_global.t2_sig <- gp_change_reg_table_global.t2 %>% filter(gp_change_p < 0.05)
 gp_change_reg_table_global.t2$gp_change_p_adj <- p.adjust(gp_change_reg_table_global.t2$gp_change_p, method = "BH")
-gp_change_reg_table_global.t2$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_global.t2$gp_change_base_p, method = "BH")
+gp_change_reg_table_global.t2$gp_base_p_adj <- p.adjust(gp_change_reg_table_global.t2$gp_base_p, method = "BH")
 gp_change_reg_table_global.t2_sig_MC <- gp_change_reg_table_global.t2 %>% filter(gp_change_p_adj < 0.05)
 
 gp_change_reg_table_global.t2_sig_MC
@@ -5383,17 +5498,17 @@ gp_change_reg_table_global.t2_sig_MC
 gp_change_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
   x_zscore <- qnorm(x)
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  lm <- lm(x_zscore ~ gp_change_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
 gp_change_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(gp_change_reg_table_full.t2)), name_mapping$abbreviation)]
 
 gp_change_reg_table_full.t2_sig <- gp_change_reg_table_full.t2 %>% filter(gp_change_p < 0.05)
 gp_change_reg_table_full.t2$gp_change_p_adj <- p.adjust(gp_change_reg_table_full.t2$gp_change_p, method = "BH")
-gp_change_reg_table_full.t2$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_full.t2$gp_change_base_p, method = "BH")
+gp_change_reg_table_full.t2$gp_base_p_adj <- p.adjust(gp_change_reg_table_full.t2$gp_base_p, method = "BH")
 gp_change_reg_table_full.t2_sig_MC <- gp_change_reg_table_full.t2 %>% filter(gp_change_p_adj < 0.05)
 
 #save tables of betas
@@ -5616,6 +5731,72 @@ write.csv(bwbwpgs_reg_table_global.t2, filename_global)
 write.csv(bwbwpgs_reg_table_full.t2, filename_regional)
 }
 ```
+####surface visualization of bw-pgs beta
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(pgs_bwbwpgs_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(pgs_bwbwpgs_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+pgs_bwbwpgs_reg_table_full.t2_sig_MC[!(pgs_bwbwpgs_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(pgs_bwbwpgs_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.pgs_bwbwpgs_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_pgs_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW_pgs in BW-BWpgs, t2"))
+
+(t2.pgs_bwbwpgs_aseg_plot <-ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_pgs_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW_pgs in BW-BWpgs, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(pgs_bwbwpgs_reg_table_full.t2_sig_MC %>% filter(bw_pgs_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(pgs_bwbwpgs_reg_table_full.t2_sig_MC$bw_pgs_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.pgs_bwbwpgs_dkt_plot, "pgs_bwpgs_ga_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.pgs_bwbwpgs_aseg_plot, "pgs_bwpgs_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+####surface visualization of bw beta
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_bwbwpgs_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_bwbwpgs_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+bw_bwbwpgs_reg_table_full.t2_sig_MC[!(bw_bwbwpgs_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(bw_bwbwpgs_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.bw_bwbwpgs_dkt_plot <-ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW in BW-BWpgs, t2"))
+
+(t2.bw_bwbwpgs_aseg_plot <-ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW in BW-BWpgs, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_bwbwpgs_reg_table_full.t2_sig_MC %>% filter(bw_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_bwbwpgs_reg_table_full.t2_sig_MC$bw_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.bw_bwbwpgs_dkt_plot, "bw_bwpgs_ga_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.bw_bwbwpgs_aseg_plot, "bw_bwpgs_t2_aseg", "pdf", figure_panels_folder)
+}
+```
 ###GA with neonatal comp as covar
 ####linear regressions
 ```{r}
@@ -5638,6 +5819,7 @@ ga_neocomp_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_
 
 ga_neocomp_reg_table_global.t2_sig <- ga_neocomp_reg_table_global.t2 %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_global.t2$ga_p_adj <- p.adjust(ga_neocomp_reg_table_global.t2$ga_p, method = "BH")
+ga_neocomp_reg_table_global.t2$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_global.t2$neocomp_p, method = "BH")
 ga_neocomp_reg_table_global.t2_sig_MC <- ga_neocomp_reg_table_global.t2 %>% filter(ga_p_adj < 0.05)
 
 ga_neocomp_reg_table_global.t2_sig_MC
@@ -5656,6 +5838,7 @@ ga_neocomp_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_ce
 
 ga_neocomp_reg_table_full.t2_sig <- ga_neocomp_reg_table_full.t2 %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_full.t2$ga_p_adj <- p.adjust(ga_neocomp_reg_table_full.t2$ga_p, method = "BH")
+ga_neocomp_reg_table_full.t2$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_full.t2$neocomp_p, method = "BH")
 ga_neocomp_reg_table_full.t2_sig_MC <- ga_neocomp_reg_table_full.t2 %>% filter(ga_p_adj < 0.05)
 
 #save tables of betas
@@ -5674,6 +5857,74 @@ filename_global <- paste0(output_folder, "ga_neocomp_global_t2.csv")
 filename_regional <- paste0(output_folder, "ga_neocomp_regional_t2.csv")
 write.csv(ga_neocomp_reg_table_global.t2, filename_global)
 write.csv(ga_neocomp_reg_table_full.t2, filename_regional)
+}
+```
+
+####GA coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+ga_neocomp_reg_table_full.t2_sig_MC[!(ga_neocomp_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(ga_neocomp_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, t2"))
+
+(t2.ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.t2_sig_MC %>% filter(ga_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.t2_sig_MC$ga_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.ga_neocomp_dkt_plot, "ga_neocomp_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.ga_neocomp_aseg_plot, "ga_neocomp_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(t2.neocomp_ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, t2"))
+
+(t2.neocomp_ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.t2[ga_neocomp_reg_table_full.t2$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(t2.neocomp_ga_neocomp_dkt_plot, "neocomp_ga_neocomp_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.neocomp_ga_neocomp_aseg_plot, "neocomp_ga_neocomp_t2_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###BW with neonatal comp as covar
@@ -5698,6 +5949,7 @@ bw_neocomp_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_
 
 bw_neocomp_reg_table_global.t2_sig <- bw_neocomp_reg_table_global.t2 %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_global.t2$bw_p_adj <- p.adjust(bw_neocomp_reg_table_global.t2$bw_p, method = "BH")
+bw_neocomp_reg_table_global.t2$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_global.t2$neocomp_p, method = "BH")
 bw_neocomp_reg_table_global.t2_sig_MC <- bw_neocomp_reg_table_global.t2 %>% filter(bw_p_adj < 0.05)
 
 bw_neocomp_reg_table_global.t2_sig_MC
@@ -5716,6 +5968,7 @@ bw_neocomp_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_ce
 
 bw_neocomp_reg_table_full.t2_sig <- bw_neocomp_reg_table_full.t2 %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_full.t2$bw_p_adj <- p.adjust(bw_neocomp_reg_table_full.t2$bw_p, method = "BH")
+bw_neocomp_reg_table_full.t2$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_full.t2$neocomp_p, method = "BH")
 bw_neocomp_reg_table_full.t2_sig_MC <- bw_neocomp_reg_table_full.t2 %>% filter(bw_p_adj < 0.05)
 
 #save tables of betas
@@ -5734,6 +5987,73 @@ filename_global <- paste0(output_folder, "bw_neocomp_global_t2.csv")
 filename_regional <- paste0(output_folder, "bw_neocomp_regional_t2.csv")
 write.csv(bw_neocomp_reg_table_global.t2, filename_global)
 write.csv(bw_neocomp_reg_table_full.t2, filename_regional)
+}
+```
+####BW coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+bw_neocomp_reg_table_full.t2_sig_MC[!(bw_neocomp_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(bw_neocomp_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, t2"))
+
+(t2.bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.t2_sig_MC %>% filter(bw_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.t2_sig_MC$bw_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.bw_neocomp_dkt_plot, "bw_neocomp_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.bw_neocomp_aseg_plot, "bw_neocomp_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(t2.neocomp_bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, t2"))
+
+(t2.neocomp_bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.t2 %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.t2[bw_neocomp_reg_table_full.t2$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(t2.neocomp_bw_neocomp_dkt_plot, "neocomp_bw_neocomp_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.neocomp_bw_neocomp_aseg_plot, "neocomp_bw_neocomp_t2_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###Gestational Age - SES as covar
@@ -7720,7 +8040,7 @@ ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7793,7 +8113,7 @@ ga_zscore <- scale(long.full_test_df$gestAge_38term)
 #Global phenotypes
 ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7811,7 +8131,7 @@ ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7881,18 +8201,11 @@ panel_save(long.ga_aseg_plot, "ga_38term_long_aseg", "pdf", figure_panels_folder
 sum(!is.na(long.full_test_df$birth_weight_oz_sum_adj))
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
 df$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
-
-#Global models save
-bw_global_models_list <- lapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, "_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
   
 #Global phenotypes -- save betas and p-values
 bw_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
   summary <- summary(lm)
   
@@ -7907,17 +8220,10 @@ bw_reg_table_global.long_sig_MC <- bw_reg_table_global.long %>% filter(bw_p_adj 
 
 bw_reg_table_global.long_sig_MC
 
-#Regional models save
-bw_regional_models_list <- lapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
-  df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ bw_zscore, data = df)
-})
-
 #Regional phenotypes -- save betas and p-values
 bw_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
   summary <- summary(lm)
   
@@ -7996,7 +8302,7 @@ bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 bwp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore)
   summary <- summary(lm)
@@ -8015,7 +8321,7 @@ bwp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bwp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ bwp_zscore)
@@ -8094,7 +8400,7 @@ bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2
 #Global Phenotypes
 bw_pgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8112,7 +8418,7 @@ bw_pgs_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8204,7 +8510,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore)
   summary <- summary(lm)
@@ -8223,7 +8529,7 @@ neocomp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ neocomp_zscore)
@@ -8303,7 +8609,7 @@ gpt1_zscore <- scale(long.full_test_df$General_p.t1)
 #Global Phenotypes
 gpt1_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt1_zscore)
   summary <- summary(lm)
   
@@ -8321,7 +8627,7 @@ gpt1_reg_table_global.long_sig_MC
 #Regional Phenotypes
 gpt1_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt1_zscore)
   summary <- summary(lm)
   
@@ -8366,7 +8672,7 @@ plot_data_aseg <- merge(gpt1_reg_table_full.long_sig_MC, ggseg::aseg, by = "labe
 gpt1_reg_table_full.long_sig_MC[!(gpt1_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(gpt1_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
 
 # Plot using ggseg
-(long.gpt1_dkt_plot <- ggpt1lot(plot_data_dkt) +
+(long.gpt1_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = gpt1_beta)) +
@@ -8375,7 +8681,7 @@ gpt1_reg_table_full.long_sig_MC[!(gpt1_reg_table_full.long_sig_MC$label %in% plo
   theme_void() +
   labs(title = "P-factor t1 long"))
 
-(long.gpt1_aseg_plot <- ggpt1lot(plot_data_aseg) +
+(long.gpt1_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = gpt1_beta)) +
  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
@@ -8401,7 +8707,7 @@ gpt2_zscore <- scale(long.full_test_df$General_p.t2)
 #Global Phenotypes
 gpt2_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt2_zscore)
   summary <- summary(lm)
   
@@ -8419,7 +8725,7 @@ gpt2_reg_table_global.long_sig_MC
 #Regional Phenotypes
 gpt2_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt2_zscore)
   summary <- summary(lm)
   
@@ -8464,7 +8770,7 @@ plot_data_aseg <- merge(gpt2_reg_table_full.long_sig_MC, ggseg::aseg, by = "labe
 gpt2_reg_table_full.long_sig_MC[!(gpt2_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(gpt2_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
 
 # Plot using ggseg
-(long.gpt2_dkt_plot <- ggpt2lot(plot_data_dkt) +
+(long.gpt2_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = gpt2_beta)) +
@@ -8473,7 +8779,7 @@ gpt2_reg_table_full.long_sig_MC[!(gpt2_reg_table_full.long_sig_MC$label %in% plo
   theme_void() +
   labs(title = "P-factor t2 long"))
 
-(long.gpt2_aseg_plot <- ggpt2lot(plot_data_aseg) +
+(long.gpt2_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = gpt2_beta)) +
  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
@@ -8493,86 +8799,90 @@ panel_save(long.gpt2_aseg_plot, "gpt2_long_aseg", "pdf", figure_panels_folder)
 ###General P-factor - change in P-factor -- including baseline P-factor as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$General_p_change) & !is.na(long.full_test_df$General_p.long))
-gp_change_zscore <- scale(long.full_test_df$General_p_change)
-gp_change_baseline_zscore <- scale(long.full_test_df$General_p.long)
+sum(!is.na(long.full_test_df$General_p_change) & !is.na(long.full_test_df$General_p_change))
+gp_zscore <- scale(long.full_test_df$General_p_change)
+gp_baseline_zscore <- scale(long.full_test_df$General_p.t1)
 
 #Global Phenotypes
-gp_change_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+gpch_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2],
+    gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
-gp_change_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(gp_change_reg_table_global.long)), name_mapping$abbreviation)]
+gpch_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(gpch_reg_table_global.long)), name_mapping$abbreviation)]
 
-gp_change_reg_table_global.long_sig <- gp_change_reg_table_global.long %>% filter(gp_change_p < 0.05)
-gp_change_reg_table_global.long$gp_change_p_adj <- p.adjust(gp_change_reg_table_global.long$gp_change_p, method = "BH")
-gp_change_reg_table_global.long$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_global.long$gp_change_base_p, method = "BH")
-gp_change_reg_table_global.long_sig_MC <- gp_change_reg_table_global.long %>% filter(gp_change_p_adj < 0.05)
+gpch_reg_table_global.long_sig <- gpch_reg_table_global.long %>% filter(gp_p < 0.05)
+gpch_reg_table_global.long$gp_p_adj <- p.adjust(gpch_reg_table_global.long$gp_p, method = "BH")
+gpch_reg_table_global.long$gp_base_p_adj <- p.adjust(gpch_reg_table_global.long$gp_base_p, method = "BH")
+gpch_reg_table_global.long_sig_MC <- gpch_reg_table_global.long %>% filter(gp_p_adj < 0.05)
 
-gp_change_reg_table_global.long_sig_MC
+gpch_reg_table_global.long_sig_MC
 
 #Regional Phenotypes
-gp_change_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+gpch_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
+  x_zscore[is.infinite(x_zscore)] <- NA
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore)
   summary <- summary(lm)
   
-  c(gp_change_beta = summary$coefficients[2,1], gp_change_p = summary$coefficients[2,4], gp_change_se = summary$coefficients[2,2],gp_change_base_beta = summary$coefficients[3,1], gp_change_base_p = summary$coefficients[3,4], gp_change_base_se = summary$coefficients[3,2])
+  c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2],gp_base_beta = summary$coefficients[3,1], gp_base_p = summary$coefficients[3,4], gp_base_se = summary$coefficients[3,2])
 })))
 
-gp_change_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(gp_change_reg_table_full.long)), name_mapping$abbreviation)]
+gpch_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(gpch_reg_table_full.long)), name_mapping$abbreviation)]
 
-gp_change_reg_table_full.long_sig <- gp_change_reg_table_full.long %>% filter(gp_change_p < 0.05)
-gp_change_reg_table_full.long$gp_change_p_adj <- p.adjust(gp_change_reg_table_full.long$gp_change_p, method = "BH")
-gp_change_reg_table_full.long$gp_change_base_p_adj <- p.adjust(gp_change_reg_table_full.long$gp_change_base_p, method = "BH")
-gp_change_reg_table_full.long_sig_MC <- gp_change_reg_table_full.long %>% filter(gp_change_p_adj < 0.05)
+gpch_reg_table_full.long_sig <- gpch_reg_table_full.long %>% filter(gp_p < 0.05)
+gpch_reg_table_full.long$gp_p_adj <- p.adjust(gpch_reg_table_full.long$gp_p, method = "BH")
+gpch_reg_table_full.long$gp_base_p_adj <- p.adjust(gpch_reg_table_full.long$gp_base_p, method = "BH")
+gpch_reg_table_full.long_sig_MC <- gpch_reg_table_full.long %>% filter(gp_p_adj < 0.05)
 
 #save tables of betas
 if(save_tables == TRUE){
 output_folder <-betas_folder
-filename_global <- paste0(output_folder, "gp_change_global_long.csv")
-filename_regional <- paste0(output_folder, "gp_change_regional_long.csv")
-write.csv(gp_change_reg_table_global.long, filename_global)
-write.csv(gp_change_reg_table_full.long, filename_regional)
+filename_global <- paste0(output_folder, "gp_global_long.csv")
+filename_regional <- paste0(output_folder, "gpch_regional_long.csv")
+write.csv(gpch_reg_table_global.long, filename_global)
+write.csv(gpch_reg_table_full.long, filename_regional)
 }
 ```
 ####visualize on surface
 ```{r}
 #merge with atlas data
-plot_data_dkt <- merge(gp_change_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
-plot_data_aseg <- merge(gp_change_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+plot_data_dkt <- merge(gpch_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(gpch_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
 
 #Regions not matched in atlases
-gp_change_reg_table_full.long_sig_MC[!(gp_change_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(gp_change_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+gpch_reg_table_full.long_sig_MC[!(gpch_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(gpch_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
 
 # Plot using ggseg
-(long.gp_change_dkt_plot <- ggplot(plot_data_dkt) +
+(long.gp_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
-             aes(fill = gp_change_beta)) +
+             aes(fill = gp_beta)) +
+     scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
   theme_void() +
   labs(title = "GP Change, long"))
 
-(long.gp_change_aseg_plot <- ggplot(plot_data_aseg) +
+(long.gp_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
-             aes(fill = gp_change_beta)) +
+             aes(fill = gp_beta)) +
+     scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
   theme_void() +
   labs(title = "GP Change, long"))
 
-print(paste0("Number of significant IDPs after FDR correction: ", dim(gp_change_reg_table_full.long_sig_MC %>% filter(gp_change_p_adj < 0.05))[1]))
-print(paste0("Beta range of significant IDPs: ", range(gp_change_reg_table_full.long_sig_MC$gp_change_beta)))
+print(paste0("Number of significant IDPs after FDR correction: ", dim(gpch_reg_table_full.long_sig_MC %>% filter(gp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(gpch_reg_table_full.long_sig_MC$gp_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.gp_change_dkt_plot, "gp_change_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.gp_change_aseg_plot, "gp_change_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.gp_dkt_plot, "gp_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.gp_aseg_plot, "gp_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 
@@ -8586,7 +8896,7 @@ bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 #Global regression
 bwp_ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + bwp_zscore)
   summary <- summary(lm)
   
@@ -8608,7 +8918,7 @@ bwpga_reg_table_global.long_sig_MC
 #regional regression
 bwp_ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + bwp_zscore)
   summary <- summary(lm)
   
@@ -8699,66 +9009,6 @@ panel_save(long.bwpga_bwp_aseg_plot, "bwpga_bwp_long_aseg", "pdf", figure_panels
 }
 ```
 
-###BW + BW PGS 
-####linear regressions
-```{r}
-sum(!is.na(long.full_test_df$bw_pgs) & !is.na(long.full_test_df$birth_weight_oz_sum_adj))
-bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10")], function(x) {scale(x)}))
-#bw_pgs_zscore$bw_zscore <- qnorm(long.full_test_df$bweight_percentile)
-bw_pgs_zscore$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
-
-#Global variables
-bwbwpgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
-  x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$bw_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
-  summary <- summary(lm)
-  
-  c(bw_pgs_beta = summary$coefficients[2,1], bw_pgs_p = summary$coefficients[2,4], bw_pgs_se = summary$coefficients[2,2], bw_beta = summary$coefficients[3,1], bw_p = summary$coefficients[3,4], bw_se = summary$coefficients[3,2])
-})))
-
-bwbwpgs_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(bwbwpgs_reg_table_global.long)), name_mapping$abbreviation)]
-
-pgs_bwbwpgs_reg_table_global.long_sig <- bwbwpgs_reg_table_global.long %>% filter(bw_pgs_p < 0.05)
-bwbwpgs_reg_table_global.long$bw_pgs_p_adj <- p.adjust(bwbwpgs_reg_table_global.long$bw_pgs_p, method = "BH")
-pgs_bwbwpgs_reg_table_global.long_sig_MC <- bwbwpgs_reg_table_global.long %>% filter(bw_pgs_p_adj < 0.05)
-
-pgs_bwbwpgs_reg_table_global.long_sig_MC
-
-bw_bwbwpgs_reg_table_global.long_sig <- bwbwpgs_reg_table_global.long %>% filter(bw_p < 0.05)
-bwbwpgs_reg_table_global.long$bw_p_adj <- p.adjust(bwbwpgs_reg_table_global.long$bw_p, method = "BH")
-bw_bwbwpgs_reg_table_global.long_sig_MC <- bwbwpgs_reg_table_global.long %>% filter(bw_p_adj < 0.05)
-
-bw_bwbwpgs_reg_table_global.long_sig_MC
-
-#Regional variables
-bwbwpgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
-  x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$bw_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
-  summary <- summary(lm)
-  
-  c(bw_pgs_beta = summary$coefficients[2,1], bw_pgs_p = summary$coefficients[2,4], bw_pgs_se = summary$coefficients[2,2], bw_beta = summary$coefficients[3,1], bw_p = summary$coefficients[3,4], bw_se = summary$coefficients[3,2])
-})))
-
-bwbwpgs_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(bwbwpgs_reg_table_full.long)), name_mapping$abbreviation)]
-
-pgs_bwbwpgs_reg_table_full.long_sig <- bwbwpgs_reg_table_full.long %>% filter(bw_pgs_p < 0.05)
-bwbwpgs_reg_table_full.long$bw_pgs_p_adj <- p.adjust(bwbwpgs_reg_table_full.long$bw_pgs_p, method = "BH")
-pgs_bwbwpgs_reg_table_full.long_sig_MC <- bwbwpgs_reg_table_full.long %>% filter(bw_pgs_p_adj < 0.05)
-
-bw_bwbwpgs_reg_table_full.long_sig <- bwbwpgs_reg_table_full.long %>% filter(bw_p < 0.05)
-bwbwpgs_reg_table_full.long$bw_p_adj <- p.adjust(bwbwpgs_reg_table_full.long$bw_p, method = "BH")
-bw_bwbwpgs_reg_table_full.long_sig_MC <- bwbwpgs_reg_table_full.long %>% filter(bw_p_adj < 0.05)
-
-if(save_tables == TRUE){
-output_folder <-betas_folder
-filename_global <- paste0(output_folder, "bw_bwpgs_global_long.csv")
-filename_regional <- paste0(output_folder, "bw_bwpgs_regional_long.csv")
-write.csv(bwbwpgs_reg_table_global.long, filename_global)
-write.csv(bwbwpgs_reg_table_full.long, filename_regional)
-}
-```
 ###GA with neonatal comp as covar
 ####linear regressions
 ```{r}
@@ -8769,7 +9019,6 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 ga_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8782,6 +9031,7 @@ ga_neocomp_reg_table_global.long$label <- name_mapping$region_name[match(sub(".l
 
 ga_neocomp_reg_table_global.long_sig <- ga_neocomp_reg_table_global.long %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_global.long$ga_p_adj <- p.adjust(ga_neocomp_reg_table_global.long$ga_p, method = "BH")
+ga_neocomp_reg_table_global.long$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_global.long$neocomp_p, method = "BH")
 ga_neocomp_reg_table_global.long_sig_MC <- ga_neocomp_reg_table_global.long %>% filter(ga_p_adj < 0.05)
 
 ga_neocomp_reg_table_global.long_sig_MC
@@ -8789,7 +9039,6 @@ ga_neocomp_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8801,6 +9050,7 @@ ga_neocomp_reg_table_full.long$label <- name_mapping$region_name[match(sub(".lon
 
 ga_neocomp_reg_table_full.long_sig <- ga_neocomp_reg_table_full.long %>% filter(ga_p < 0.05)
 ga_neocomp_reg_table_full.long$ga_p_adj <- p.adjust(ga_neocomp_reg_table_full.long$ga_p, method = "BH")
+ga_neocomp_reg_table_full.long$neocomp_p_adj <- p.adjust(ga_neocomp_reg_table_full.long$neocomp_p, method = "BH")
 ga_neocomp_reg_table_full.long_sig_MC <- ga_neocomp_reg_table_full.long %>% filter(ga_p_adj < 0.05)
 
 #save tables of betas
@@ -8821,6 +9071,74 @@ write.csv(ga_neocomp_reg_table_global.long, filename_global)
 write.csv(ga_neocomp_reg_table_full.long, filename_regional)
 }
 ```
+
+####GA coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+ga_neocomp_reg_table_full.long_sig_MC[!(ga_neocomp_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(ga_neocomp_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, long"))
+
+(long.ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "GA with neocomp, long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.long_sig_MC %>% filter(ga_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.long_sig_MC$ga_beta)))
+
+if(save_figures == TRUE){
+panel_save(long.ga_neocomp_dkt_plot, "ga_neocomp_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.ga_neocomp_aseg_plot, "ga_neocomp_long_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ga_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(ga_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(long.neocomp_ga_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, long"))
+
+(long.neocomp_ga_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ga_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in ga-neocomp, long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ga_neocomp_reg_table_full.long[ga_neocomp_reg_table_full.long$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(long.neocomp_ga_neocomp_dkt_plot, "neocomp_ga_neocomp_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.neocomp_ga_neocomp_aseg_plot, "neocomp_ga_neocomp_long_aseg", "pdf", figure_panels_folder)
+}
+```
 ###BW with neonatal comp as covar
 ####linear regressions
 ```{r}
@@ -8831,7 +9149,6 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 bw_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8844,6 +9161,7 @@ bw_neocomp_reg_table_global.long$label <- name_mapping$region_name[match(sub(".l
 
 bw_neocomp_reg_table_global.long_sig <- bw_neocomp_reg_table_global.long %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_global.long$bw_p_adj <- p.adjust(bw_neocomp_reg_table_global.long$bw_p, method = "BH")
+bw_neocomp_reg_table_global.long$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_global.long$neocomp_p, method = "BH")
 bw_neocomp_reg_table_global.long_sig_MC <- bw_neocomp_reg_table_global.long %>% filter(bw_p_adj < 0.05)
 
 bw_neocomp_reg_table_global.long_sig_MC
@@ -8851,7 +9169,6 @@ bw_neocomp_reg_table_global.long_sig_MC
 #Regional phenotypes
 bw_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8863,6 +9180,7 @@ bw_neocomp_reg_table_full.long$label <- name_mapping$region_name[match(sub(".lon
 
 bw_neocomp_reg_table_full.long_sig <- bw_neocomp_reg_table_full.long %>% filter(bw_p < 0.05)
 bw_neocomp_reg_table_full.long$bw_p_adj <- p.adjust(bw_neocomp_reg_table_full.long$bw_p, method = "BH")
+bw_neocomp_reg_table_full.long$neocomp_p_adj <- p.adjust(bw_neocomp_reg_table_full.long$neocomp_p, method = "BH")
 bw_neocomp_reg_table_full.long_sig_MC <- bw_neocomp_reg_table_full.long %>% filter(bw_p_adj < 0.05)
 
 #save tables of betas
@@ -8883,6 +9201,73 @@ write.csv(bw_neocomp_reg_table_global.long, filename_global)
 write.csv(bw_neocomp_reg_table_full.long, filename_regional)
 }
 ```
+####BW coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlaneocomp
+bw_neocomp_reg_table_full.long_sig_MC[!(bw_neocomp_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(bw_neocomp_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, long"))
+
+(long.bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "bw with neocomp, long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.long_sig_MC %>% filter(bw_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.long_sig_MC$bw_beta)))
+
+if(save_figures == TRUE){
+panel_save(long.bw_neocomp_dkt_plot, "bw_neocomp_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.bw_neocomp_aseg_plot, "bw_neocomp_long_aseg", "pdf", figure_panels_folder)
+}
+```
+####Neocomp coefs
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05), ggseg::aseg, by = "label")
+
+# Plot using ggseg
+(long.neocomp_bw_neocomp_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk,
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, long"))
+
+(long.neocomp_bw_neocomp_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Neocomp in bw-neocomp, long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_neocomp_reg_table_full.long %>% filter(neocomp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_neocomp_reg_table_full.long[bw_neocomp_reg_table_full.long$neocomp_p_adj < 0.05,"neocomp_beta"])))
+
+if(save_figures == TRUE){
+panel_save(long.neocomp_bw_neocomp_dkt_plot, "neocomp_bw_neocomp_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.neocomp_bw_neocomp_aseg_plot, "neocomp_bw_neocomp_long_aseg", "pdf", figure_panels_folder)
+}
+```
 ###Gestational Age - SES as covar
 ####linear regressions
 ```{r}
@@ -8892,7 +9277,7 @@ ga_zscore <- scale(long.full_test_df$gestAge)
 #Global regression
 ga_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8910,7 +9295,7 @@ ga_ses_reg_table_global.long_sig_MC
 #regional regression
 ga_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8975,7 +9360,7 @@ bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global regression
 bw_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8993,7 +9378,7 @@ bw_ses_reg_table_global.long_sig_MC
 #regional regression
 bw_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9059,7 +9444,7 @@ bwp_zscore <- scale(long.full_test_df$bweight_percentile)
 #Global regression
 bwp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9077,7 +9462,7 @@ bwp_ses_reg_table_global.long_sig_MC
 #regional regression
 bwp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9143,7 +9528,7 @@ bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2
 #Global Phenotypes
 bw_pgs_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9161,7 +9546,7 @@ bw_pgs_ses_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9225,7 +9610,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global regression
 neocomp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9243,7 +9628,7 @@ neocomp_ses_reg_table_global.long_sig_MC
 #regional regression
 neocomp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9301,17 +9686,18 @@ panel_save(long.neocomp_ses_aseg_plot, "neocomp_ses_long_aseg", "pdf", figure_pa
 }
 ```
 
-###general P-factor - SES as covar
+###general P-factor change - SES as covar
 ####linear regressions
 ```{r}
 sum(!is.na(long.full_test_df$General_p.long) & !is.na(long.full_test_df$combo.income_ordered) & !is.na(long.full_test_df$combo.prnt_edu_ordered))
-gp_zscore <- scale(long.full_test_df$General_p.long)
+gp_zscore <- scale(long.full_test_df$General_p_change)
+gp_baseline_zscore <- scale(long.full_test_df$General_p.t1)
 
 #Global regression
 gp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
+  x_zscore[is.infinite(x_zscore)] <- NA
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
   c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2])
@@ -9328,8 +9714,8 @@ gp_ses_reg_table_global.long_sig_MC
 #regional regression
 gp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
+  x_zscore[is.infinite(x_zscore)] <- NA
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
   c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2])
@@ -9387,17 +9773,17 @@ panel_save(long.gp_ses_aseg_plot, "gp_ses_long_aseg", "pdf", figure_panels_folde
 ###GA - weight & height as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$gestAge) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$gestAge) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
-df$weight_zscore <- scale(long.full_test_df$anthroweightcalc)
-df$height_zscore <- scale(long.full_test_df$anthroheightcalc)
+df$weight_zscore <- scale(long.full_test_df$anthroweightcalc.t2)
+df$height_zscore <- scale(long.full_test_df$anthroheightcalc.t2)
 df$ga_zscore <- scale(long.full_test_df$gestAge)
 
 #Global phenotypes
 ga_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9415,7 +9801,7 @@ ga_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9476,17 +9862,17 @@ panel_save(long.ga_wh_aseg_plot, "ga_wh_long_aseg", "pdf", figure_panels_folder)
 ###birth weight - weight & height as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$birth_weight_oz_sum_adj) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$birth_weight_oz_sum_adj) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
-df$weight_zscore <- scale(long.full_test_df$anthroweightcalc)
-df$height_zscore <- scale(long.full_test_df$anthroheightcalc)
+df$weight_zscore <- scale(long.full_test_df$anthroweightcalc.t2)
+df$height_zscore <- scale(long.full_test_df$anthroheightcalc.t2)
 df$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 
 #Global phenotypes
 bw_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9504,7 +9890,7 @@ bw_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bw_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9563,17 +9949,17 @@ panel_save(long.bw_wh_aseg_plot, "bw_wh_long_aseg", "pdf", figure_panels_folder)
 ###birth weight percentile - weight & height as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$bweight_percentile) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$bweight_percentile) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
-df$weight_zscore <- scale(long.full_test_df$anthroweightcalc)
-df$height_zscore <- scale(long.full_test_df$anthroheightcalc)
+df$weight_zscore <- scale(long.full_test_df$anthroweightcalc.t2)
+df$height_zscore <- scale(long.full_test_df$anthroheightcalc.t2)
 df$bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 
 #Global phenotypes
 bwp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9591,7 +9977,7 @@ bwp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bwp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9651,14 +10037,14 @@ panel_save(long.bwp_wh_aseg_plot, "bwp_wh_long_aseg", "pdf", figure_panels_folde
 ###PRS-bw - wh as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$bw_pgs) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$bw_pgs) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10")], function(x) {scale(x)}))
 
 #Global Phenotypes
 bw_pgs_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$anthroweightcalc + long.full_test_df$anthroheightcalc + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
+  x_zscore[is.infinite(x_zscore)] <- NA
+  lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$anthroweightcalc.t2 + long.full_test_df$anthroheightcalc.t2 + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
   c(bw_pgs_beta = summary$coefficients[2,1], bw_pgs_p = summary$coefficients[2,4], bw_pgs_se = summary$coefficients[2,2])
@@ -9675,7 +10061,7 @@ bw_pgs_wh_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9733,17 +10119,17 @@ panel_save(long.bwpgs_wh_aseg_plot, "bw_pgs_wh_long_aseg", "pdf", figure_panels_
 ###Neonatal comp - weight & height as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$neonatal_comp_total) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$neonatal_comp_total) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
-df$weight_zscore <- scale(long.full_test_df$anthroweightcalc)
-df$height_zscore <- scale(long.full_test_df$anthroheightcalc)
+df$weight_zscore <- scale(long.full_test_df$anthroweightcalc.t2)
+df$height_zscore <- scale(long.full_test_df$anthroheightcalc.t2)
 df$neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 
 #Global phenotypes
 neocomp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9761,7 +10147,7 @@ neocomp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 neocomp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9821,18 +10207,19 @@ panel_save(long.neocomp_wh_aseg_plot, "neocomp_wh_long_aseg", "pdf", figure_pane
 ###General p - weight & height as covar
 ####linear regressions
 ```{r}
-sum(!is.na(long.full_test_df$General_p.long) & !is.na(long.full_test_df$anthroweightcalc) & !is.na(long.full_test_df$anthroheightcalc))
+sum(!is.na(long.full_test_df$General_p_change) & !is.na(long.full_test_df$anthroweightcalc.t2) & !is.na(long.full_test_df$anthroheightcalc.t2))
 
 df <- as.data.frame(long.full_test_df[,"src_subject_id"])
-df$weight_zscore <- scale(long.full_test_df$anthroweightcalc)
-df$height_zscore <- scale(long.full_test_df$anthroheightcalc)
-df$gp_zscore <- scale(long.full_test_df$General_p.long)
+df$weight_zscore <- scale(long.full_test_df$anthroweightcalc.t2)
+df$height_zscore <- scale(long.full_test_df$anthroheightcalc.t2)
+df$gp_zscore <- scale(long.full_test_df$General_p_change)
+df$gp_baseline_zscore <- scale(long.full_test_df$General_p.t1)
 
 #Global phenotypes
 gp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_zscore + weight_zscore + height_zscore, data = df)
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
   c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2])
@@ -9849,8 +10236,8 @@ gp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 gp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
-  lm <- lm(x_zscore ~ gp_zscore + weight_zscore + height_zscore, data = df)
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
+  lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
   c(gp_beta = summary$coefficients[2,1], gp_p = summary$coefficients[2,4], gp_se = summary$coefficients[2,2])
@@ -9916,7 +10303,7 @@ total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_ce
 #Global phenotypes
 icv_ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
 lm <- lm(x_zscore ~ ga_zscore + total_volume_zcore)
   summary <- summary(lm)
   
@@ -9934,7 +10321,7 @@ icv_ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 icv_ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + total_volume_zcore)
   summary <- summary(lm)
   
@@ -10078,7 +10465,7 @@ df$total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long
 #Global phenotypes -- save betas and p-values
 icv_bw_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + total_volume_zcore, data = df)
   summary <- summary(lm)
   
@@ -10096,7 +10483,7 @@ icv_bw_reg_table_global.long_sig_MC
 #Regional phenotypes -- save betas and p-values
 icv_bw_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + total_volume_zcore, data = df)
   summary <- summary(lm)
   
@@ -10244,7 +10631,6 @@ total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_ce
 icv_bwp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + total_volume_zcore)
   summary <- summary(lm)
@@ -10263,7 +10649,7 @@ icv_bwp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_bwp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ bwp_zscore + total_volume_zcore)
@@ -10408,7 +10794,7 @@ total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_c
 #Global Phenotypes
 icv_bw_pgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + total_volume_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -10426,7 +10812,7 @@ icv_bw_pgs_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_bw_pgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + total_volume_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -10567,7 +10953,7 @@ total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_c
 #Global Phenotypes
 icv_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10585,7 +10971,7 @@ icv_neocomp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10713,13 +11099,13 @@ panel_save(long.icv_neocomp_full_aseg_plot, "icv_neocomp_full_long_aseg", "pdf",
 ```{r}
 sum(!is.na(long.full_test_df$General_p_change))
 gp_zscore <- scale(long.full_test_df$General_p_change)
-gp_baseline_zscore <- scale(long.full_test_df$General_p.long)
+gp_baseline_zscore <- scale(long.full_test_df$General_p.t1)
 total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_centiles)
 
 #Global Phenotypes
 icv_gpch_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10738,7 +11124,7 @@ icv_gpch_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_gpch_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
-x _zscore[is.infinite(x_zscore)] <- NA
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10842,11 +11228,11 @@ panel_save(long.icv_gp_survive_aseg_plot, "icv_gpchange_survive_long_aseg", "pdf
 ####visualize on surface
 ```{r}
 #merge with atlas data
-plot_data_dkt <- merge(icv_gp_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
-plot_data_aseg <- merge(icv_gp_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+plot_data_dkt <- merge(icv_gpch_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(icv_gpch_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
 
 #Regions not matched in atlases
-icv_gp_reg_table_full.long_sig_MC[!(icv_gp_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(icv_gp_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+icv_gpch_reg_table_full.long_sig_MC[!(icv_gpch_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(icv_gpch_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
 
 # Plot using ggseg
 (long.icv_gp_full_dkt_plot <- ggplot(plot_data_dkt) +
@@ -10864,8 +11250,8 @@ icv_gp_reg_table_full.long_sig_MC[!(icv_gp_reg_table_full.long_sig_MC$label %in%
   theme_void() +
   labs(title = "gp change, full controlling for icv, long"))
 
-print(paste0("Number of significant IDPs after FDR correction: ", dim(icv_gp_reg_table_full.long_sig_MC %>% filter(gp_p_adj < 0.05))[1]))
-print(paste0("Beta range of significant IDPs: ", range(icv_gp_reg_table_full.long_sig_MC$gp_beta)))
+print(paste0("Number of significant IDPs after FDR correction: ", dim(icv_gpch_reg_table_full.long_sig_MC %>% filter(gp_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(icv_gpch_reg_table_full.long_sig_MC$gp_beta)))
 
 if(save_figures == TRUE){
 panel_save(long.icv_gp_full_dkt_plot, "icv_gpchange_full_long_dkt", "pdf", figure_panels_folder)
