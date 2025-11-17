@@ -7635,6 +7635,7 @@ ga_zscore <- scale(long.full_test_df$gestAge)
 #Global phenotypes
 ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+  x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7653,6 +7654,7 @@ ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7725,6 +7727,7 @@ ga_zscore <- scale(long.full_test_df$gestAge_38term)
 #Global phenotypes
 ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7742,6 +7745,7 @@ ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore)
   summary <- summary(lm)
   
@@ -7815,12 +7819,14 @@ df$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global models save
 bw_global_models_list <- lapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, "_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
 })
   
 #Global phenotypes -- save betas and p-values
 bw_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
   summary <- summary(lm)
   
@@ -7838,12 +7844,14 @@ bw_reg_table_global.long_sig_MC
 #Regional models save
 bw_regional_models_list <- lapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
 })
 
 #Regional phenotypes -- save betas and p-values
 bw_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore, data = df)
   summary <- summary(lm)
   
@@ -7922,6 +7930,7 @@ bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 bwp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore)
   summary <- summary(lm)
@@ -7940,6 +7949,7 @@ bwp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bwp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ bwp_zscore)
@@ -8018,6 +8028,7 @@ bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2
 #Global Phenotypes
 bw_pgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8035,6 +8046,7 @@ bw_pgs_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8126,6 +8138,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore)
   summary <- summary(lm)
@@ -8144,6 +8157,7 @@ neocomp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ neocomp_zscore)
@@ -8223,6 +8237,7 @@ gpt1_zscore <- scale(long.full_test_df$General_p.t1)
 #Global Phenotypes
 gpt1_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt1_zscore)
   summary <- summary(lm)
   
@@ -8240,6 +8255,7 @@ gpt1_reg_table_global.long_sig_MC
 #Regional Phenotypes
 gpt1_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt1_zscore)
   summary <- summary(lm)
   
@@ -8319,6 +8335,7 @@ gpt2_zscore <- scale(long.full_test_df$General_p.t2)
 #Global Phenotypes
 gpt2_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt2_zscore)
   summary <- summary(lm)
   
@@ -8336,6 +8353,7 @@ gpt2_reg_table_global.long_sig_MC
 #Regional Phenotypes
 gpt2_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gpt2_zscore)
   summary <- summary(lm)
   
@@ -8416,6 +8434,7 @@ gp_change_baseline_zscore <- scale(long.full_test_df$General_p.long)
 #Global Phenotypes
 gp_change_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
   summary <- summary(lm)
@@ -8435,6 +8454,7 @@ gp_change_reg_table_global.long_sig_MC
 #Regional Phenotypes
 gp_change_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_change_zscore + gp_change_baseline_zscore)
   summary <- summary(lm)
@@ -8500,6 +8520,7 @@ bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 #Global regression
 bwp_ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + bwp_zscore)
   summary <- summary(lm)
   
@@ -8521,6 +8542,7 @@ bwpga_reg_table_global.long_sig_MC
 #regional regression
 bwp_ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + bwp_zscore)
   summary <- summary(lm)
   
@@ -8622,6 +8644,7 @@ bw_pgs_zscore$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global variables
 bwbwpgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$bw_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8645,6 +8668,7 @@ bw_bwbwpgs_reg_table_global.long_sig_MC
 #Regional variables
 bwbwpgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + bw_pgs_zscore$bw_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -8679,6 +8703,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 ga_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8698,6 +8723,7 @@ ga_neocomp_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8739,6 +8765,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 bw_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8758,6 +8785,7 @@ bw_neocomp_reg_table_global.long_sig_MC
 #Regional phenotypes
 bw_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + neocomp_zscore)
   summary <- summary(lm)
   
@@ -8798,6 +8826,7 @@ ga_zscore <- scale(long.full_test_df$gestAge)
 #Global regression
 ga_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8815,6 +8844,7 @@ ga_ses_reg_table_global.long_sig_MC
 #regional regression
 ga_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8879,6 +8909,7 @@ bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global regression
 bw_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8896,6 +8927,7 @@ bw_ses_reg_table_global.long_sig_MC
 #regional regression
 bw_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8961,6 +8993,7 @@ bwp_zscore <- scale(long.full_test_df$bweight_percentile)
 #Global regression
 bwp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -8978,6 +9011,7 @@ bwp_ses_reg_table_global.long_sig_MC
 #regional regression
 bwp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9043,6 +9077,7 @@ bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2
 #Global Phenotypes
 bw_pgs_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9060,6 +9095,7 @@ bw_pgs_ses_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9123,6 +9159,7 @@ neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global regression
 neocomp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9140,6 +9177,7 @@ neocomp_ses_reg_table_global.long_sig_MC
 #regional regression
 neocomp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9206,6 +9244,7 @@ gp_zscore <- scale(long.full_test_df$General_p.long)
 #Global regression
 gp_ses_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9223,6 +9262,7 @@ gp_ses_reg_table_global.long_sig_MC
 #regional regression
 gp_ses_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered)
   summary <- summary(lm)
   
@@ -9291,6 +9331,7 @@ df$ga_zscore <- scale(long.full_test_df$gestAge)
 #Global phenotypes
 ga_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9308,6 +9349,7 @@ ga_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9378,6 +9420,7 @@ df$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global phenotypes
 bw_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9395,6 +9438,7 @@ bw_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bw_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9463,6 +9507,7 @@ df$bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 #Global phenotypes
 bwp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9480,6 +9525,7 @@ bwp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bwp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9545,6 +9591,7 @@ bw_pgs_zscore <- as.data.frame(sapply(long.full_test_df[,c("bw_pgs", "PC1", "PC2
 #Global Phenotypes
 bw_pgs_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$anthroweightcalc + long.full_test_df$anthroheightcalc + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9562,6 +9609,7 @@ bw_pgs_wh_reg_table_global.long_sig_MC
 #Regional Phenotypes
 bw_pgs_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + long.full_test_df$combo.income_ordered + long.full_test_df$combo.prnt_edu_ordered + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -9629,6 +9677,7 @@ df$neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 neocomp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9646,6 +9695,7 @@ neocomp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 neocomp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9715,6 +9765,7 @@ df$gp_zscore <- scale(long.full_test_df$General_p.long)
 #Global phenotypes
 gp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9732,6 +9783,7 @@ gp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 gp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9798,6 +9850,7 @@ total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_ce
 #Global phenotypes
 icv_ga_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
 lm <- lm(x_zscore ~ ga_zscore + total_volume_zcore)
   summary <- summary(lm)
   
@@ -9815,6 +9868,7 @@ icv_ga_reg_table_global.long_sig_MC
 #Regional phenotypes
 icv_ga_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + total_volume_zcore)
   summary <- summary(lm)
   
@@ -9958,6 +10012,7 @@ df$total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long
 #Global phenotypes -- save betas and p-values
 icv_bw_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + total_volume_zcore, data = df)
   summary <- summary(lm)
   
@@ -9975,6 +10030,7 @@ icv_bw_reg_table_global.long_sig_MC
 #Regional phenotypes -- save betas and p-values
 icv_bw_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + total_volume_zcore, data = df)
   summary <- summary(lm)
   
@@ -10122,6 +10178,7 @@ total_volume_zcore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_ce
 icv_bwp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + total_volume_zcore)
   summary <- summary(lm)
@@ -10140,6 +10197,7 @@ icv_bwp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_bwp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   x_zscore[is.infinite(x_zscore)] <- NA
   
   lm <- lm(x_zscore ~ bwp_zscore + total_volume_zcore)
@@ -10284,6 +10342,7 @@ total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_c
 #Global Phenotypes
 icv_bw_pgs_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + total_volume_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -10301,6 +10360,7 @@ icv_bw_pgs_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_bw_pgs_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[,which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_pgs_zscore$bw_pgs + total_volume_zscore + bw_pgs_zscore$PC1 + bw_pgs_zscore$PC2 + bw_pgs_zscore$PC3 + bw_pgs_zscore$PC4 + bw_pgs_zscore$PC5 + bw_pgs_zscore$PC6 + bw_pgs_zscore$PC7 + bw_pgs_zscore$PC8 + bw_pgs_zscore$PC9 + bw_pgs_zscore$PC10)
   summary <- summary(lm)
   
@@ -10441,6 +10501,7 @@ total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_c
 #Global Phenotypes
 icv_neocomp_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10458,6 +10519,7 @@ icv_neocomp_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_neocomp_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10591,6 +10653,7 @@ total_volume_zscore <- qnorm(long.full_test_df$smri_vol_scs_intracranialv.long_c
 #Global Phenotypes
 icv_gpch_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + total_volume_zscore)
   summary <- summary(lm)
   
@@ -10609,6 +10672,7 @@ icv_gpch_reg_table_global.long_sig_MC
 #Regional Phenotypes
 icv_gpch_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   x_zscore <- qnorm(x)
+x _zscore[is.infinite(x_zscore)] <- NA
   lm <- lm(x_zscore ~ gp_zscore + gp_baseline_zscore + total_volume_zscore)
   summary <- summary(lm)
   
