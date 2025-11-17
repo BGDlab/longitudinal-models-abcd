@@ -10,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 diagnostics <- TRUE
 generate <- FALSE
-save_fits <- FALSE
+save_fits <- TRUE
 save_best_models <- TRUE
 plot <- FALSE
 code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
@@ -296,7 +296,6 @@ sTwo_test_df$age <- as.numeric(sTwo_test_df$age)
 #Fits
 ##load all fits, process, and save
 ```{r}
-save_fits = TRUE
 all_fits_filename <- paste0(fits_path, "t2_BCT_fits.csv")
 if(save_fits == TRUE){
 sOne_fits <- inspect_model_fits(splitOne_folder, sOne_fits_stats_filename)

@@ -202,7 +202,7 @@ plot_data_aseg <- merge(name_mapping, ggseg::aseg, by.x = "region_name", by.y = 
 regions_notplotted <- name_mapping[!(name_mapping$region_name %in% plot_data_dkt$region_name) & !(name_mapping$region_name %in% plot_data_aseg$region_name),] %>% filter(abbreviation %in% phenotypes_for_MC)
 write.csv(regions_notplotted, "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/regions_notplotted.csv")
 ```
-#Create folder for saving output
+#Create folders for saving output
 ```{r}
 betas_folder <- paste0(save_path, "full_betas/")
 if (!dir.exists(paste0(save_path, "full_betas/"))) dir.create(betas_folder)
@@ -1569,7 +1569,7 @@ filename_fig1 <- paste0(figure_panels_folder, "Fig1.svg")
 ggsave(plot=final_grid, filename=filename_fig1, dpi=300, width=12, height=8)
 }
 ```
-#Plots for Fig 2/Fig 3/Fig 4 and supplements
+#Plots for Fig 2/Fig 3 and supplements
 ##get number of infinite cells when qnormed, make a table of N per phenotype
 ```{r}
 
@@ -8656,8 +8656,8 @@ if(save_tables == TRUE){
 }
 if(save_tables == TRUE){
 output_folder <-betas_folder
-filename_global <- paste0(output_folder, "gpt1_global_long.csv")
-filename_regional <- paste0(output_folder, "gpt1_regional_long.csv")
+filename_global <- paste0(output_folder, "gptime1_global_long.csv")
+filename_regional <- paste0(output_folder, "gptime1_regional_long.csv")
 write.csv(gpt1_reg_table_global.long, filename_global)
 write.csv(gpt1_reg_table_full.long, filename_regional)
 }
@@ -8693,8 +8693,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(gpt1_reg_t
 print(paste0("Beta range of significant IDPs: ", range(gpt1_reg_table_full.long_sig_MC$gpt1_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.gpt1_dkt_plot, "gpt1_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.gpt1_aseg_plot, "gpt1_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.gpt1_dkt_plot, "gptime1_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.gpt1_aseg_plot, "gptime1_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 
@@ -8754,8 +8754,8 @@ if(save_tables == TRUE){
 }
 if(save_tables == TRUE){
 output_folder <-betas_folder
-filename_global <- paste0(output_folder, "gpt2_global_long.csv")
-filename_regional <- paste0(output_folder, "gpt2_regional_long.csv")
+filename_global <- paste0(output_folder, "gptime2_global_long.csv")
+filename_regional <- paste0(output_folder, "gptime2_regional_long.csv")
 write.csv(gpt2_reg_table_global.long, filename_global)
 write.csv(gpt2_reg_table_full.long, filename_regional)
 }
@@ -8791,8 +8791,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(gpt2_reg_t
 print(paste0("Beta range of significant IDPs: ", range(gpt2_reg_table_full.long_sig_MC$gpt2_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.gpt2_dkt_plot, "gpt2_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.gpt2_aseg_plot, "gpt2_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.gpt2_dkt_plot, "gptime2_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.gpt2_aseg_plot, "gptime2_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 
@@ -8844,8 +8844,8 @@ gpch_reg_table_full.long_sig_MC <- gpch_reg_table_full.long %>% filter(gp_p_adj 
 #save tables of betas
 if(save_tables == TRUE){
 output_folder <-betas_folder
-filename_global <- paste0(output_folder, "gp_global_long.csv")
-filename_regional <- paste0(output_folder, "gpch_regional_long.csv")
+filename_global <- paste0(output_folder, "gp_change_global_long.csv")
+filename_regional <- paste0(output_folder, "gp_change_regional_long.csv")
 write.csv(gpch_reg_table_global.long, filename_global)
 write.csv(gpch_reg_table_full.long, filename_regional)
 }
@@ -8881,8 +8881,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(gpch_reg_t
 print(paste0("Beta range of significant IDPs: ", range(gpch_reg_table_full.long_sig_MC$gp_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.gp_dkt_plot, "gp_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.gp_aseg_plot, "gp_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.gp_dkt_plot, "gp_change_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.gp_aseg_plot, "gp_change_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 
@@ -11150,8 +11150,8 @@ if(save_tables == TRUE){
 }
 if(save_tables == TRUE){
 output_folder <-betas_folder
-filename_global <- paste0(output_folder, "gpchange_icv_global_long.csv")
-filename_regional <- paste0(output_folder, "gpchange_icv_regional_long.csv")
+filename_global <- paste0(output_folder, "gp_change_icv_global_long.csv")
+filename_regional <- paste0(output_folder, "gp_change_icv_regional_long.csv")
 write.csv(icv_gpch_reg_table_global.long, filename_global)
 write.csv(icv_gpch_reg_table_full.long, filename_regional)
 }
@@ -11221,8 +11221,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(wide_combi
 print(paste0("Beta range of significant IDPs: ", range(wide_combined_reg_table[wide_combined_reg_table$gp_p_adj_uni < 0.05 & wide_combined_reg_table$survive_icv == TRUE & sub(".long_centiles","", wide_combined_reg_table$Row.names) %in% phenotypes_for_MC, 'gp_beta_icv'])))
 
 if(save_figures == TRUE){
-panel_save(long.icv_gp_survive_dkt_plot, "icv_gpchange_survive_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.icv_gp_survive_aseg_plot, "icv_gpchange_survive_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.icv_gp_survive_dkt_plot, "icv_gp_change_survive_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.icv_gp_survive_aseg_plot, "icv_gp_change_survive_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 ####visualize on surface
@@ -11254,8 +11254,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(icv_gpch_r
 print(paste0("Beta range of significant IDPs: ", range(icv_gpch_reg_table_full.long_sig_MC$gp_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.icv_gp_full_dkt_plot, "icv_gpchange_full_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.icv_gp_full_aseg_plot, "icv_gpchange_full_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.icv_gp_full_dkt_plot, "icv_gp_change_full_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.icv_gp_full_aseg_plot, "icv_gp_change_full_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 #Save scale images
@@ -11331,95 +11331,169 @@ legend(
   box.lwd = 0  
 )
 ```
-#Compile all lm() stats into supplementary table
-all global volumes
-regional volumes if they aren't plotted on gg
+#Compile all lm() stats into supplementary tables 6-8
+all volumes (regional and global together)
+##define function
 ```{r}
-full_folder <- betas_folder
-ncol = length(list.files(full_folder))
-supp_betas_global <- data.frame(matrix(NA, nrow = length(global_phenotypes), ncol = 1))
-names(supp_betas_global) <- "label"
-rownames(supp_betas_global) <- global_phenotypes
-supp_betas_global$label <- name_mapping$region_name[match(rownames(supp_betas_global), name_mapping$abbreviation)]
-supp_betas_regional <- data.frame(matrix(NA, nrow = length(phenotypes_for_MC), ncol = 1))
-rownames(supp_betas_regional) <- phenotypes_for_MC
-names(supp_betas_regional) <- "label"
-supp_betas_regional$label <- name_mapping$region_name[match(rownames(supp_betas_regional), name_mapping$abbreviation)]
-
-for (i in 1:length(list.files(full_folder))) {
-  name <- list.files(full_folder)[i]
-  print(name)
+make_betas_table <- function(folder, pattern = NULL, cols_order_custom = NULL) {
   
-  table <- read.csv(paste0(full_folder, name)) %>% 
-    rename(var_name = X)
+  full_folder <- folder
   
-  p_columns <- names(table)[grep("p_adj", names(table))]
+  if (!is.null(pattern)) {
+    files <- list.files(full_folder)[grep(pattern, list.files(full_folder))]
+  } else {
+    files <- list.files(full_folder)
+  }
   
-  for (k in 1:length(p_columns)) {
-    table_sig <- table %>% filter(.data[[p_columns[k]]] < 0.05)
+  # Initialize output tables
+  supp_betas_global <- data.frame(label = name_mapping$region_name[match(global_phenotypes,
+                                                                         name_mapping$abbreviation)],
+                                  row.names = global_phenotypes)
+  
+  supp_betas_regional <- data.frame(label = name_mapping$region_name[match(phenotypes_for_MC,
+                                                                           name_mapping$abbreviation)],
+                                    row.names = phenotypes_for_MC)
+  
+  # function add significance stars
+  sig_stars <- function(p) {
+      ifelse(is.na(p), NA,
+      ifelse(p < 0.001, "***",
+      ifelse(p < 0.01,  "**",
+      ifelse(p < 0.05,  "*", NA))))
+  }
+  # Loop over files
+  for (file in files) {
     
-    if (dim(table_sig)[1] > 0) {
-      p_col_name <- paste(sub(".csv", "", name), p_columns[k], sep = "_")
-      beta_col_name <- paste(sub(".csv", "", name), sub("p_adj", "beta", p_columns[k]), sep = "_")
-      var_p <- p_columns[k]
-      var_beta <- sub("p_adj", "beta", p_columns[k])
+    message(file)
+    
+    table <- read.csv(paste0(full_folder, file)) %>% 
+      dplyr::rename(var_name = X)
+    
+    p_columns <- names(table)[grep("p_adj", names(table))]
+    
+    for (var_p in p_columns) {
       
-      if (grepl("regional", name)) {
-        
-        supp_betas_regional <- merge(
-          table_sig %>% select(all_of(c(var_p, "label"))) %>% rename(!!p_col_name := var_p), 
-          supp_betas_regional, 
-          by = "label", 
-          all.y = TRUE
-        )
-        
-        supp_betas_regional <- merge(
-          table_sig %>% select(all_of(c(var_beta, "label"))) %>% rename(!!beta_col_name := var_beta), 
-          supp_betas_regional, 
-          by = "label",
-          all.y = TRUE
-        )
-        
-      } else if (grepl("global", name)) {
-        supp_betas_global <- merge(
-          table_sig %>% select(all_of(c(var_p, "label"))) %>% rename(!!p_col_name := var_p), 
-          supp_betas_global, 
-          by = "label",
-          all.y = TRUE
-        )
-        
-        supp_betas_global <- merge(
-          table_sig %>% select(all_of(c(var_beta, "label"))) %>% rename(!!beta_col_name := var_beta), 
-          supp_betas_global, 
-          by = "label",
-          all.y = TRUE
-        )
+      var_beta <- sub("p_adj", "beta", var_p)
+      p_col_name    <- paste(sub(".csv", "", file), var_p, sep = "_")
+      beta_col_name <- paste(sub(".csv", "", file), var_beta, sep = "_")
+      sig_col_name  <- paste(sub(".csv", "", file), sub("p_adj", "p_significance", var_p), sep = "_")
+      
+      # Extract columns from input table
+      tmp_p    <- table %>% select(label, all_of(var_p))
+      tmp_beta <- table %>% select(label, all_of(var_beta))
+      
+      # Create separate significance column
+      tmp_sig <- tmp_p
+      tmp_sig[[var_p]] <- sig_stars(tmp_p[[var_p]])
+      tmp_sig <- tmp_sig %>% rename(!!sig_col_name := var_p)
+      
+      # Rename p-values and beta columns
+      tmp_p    <- tmp_p %>% rename(!!p_col_name := var_p)
+      tmp_beta <- tmp_beta %>% rename(!!beta_col_name := var_beta)
+      
+      # Merge into global or regional table
+      if (grepl("regional", file)) {
+        supp_betas_regional <- merge(tmp_p, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- merge(tmp_beta, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- merge(tmp_sig, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- supp_betas_regional %>%
+          relocate(all_of(sig_col_name), .after = all_of(p_col_name))
+      } else if (grepl("global", file)) {
+        supp_betas_global <- merge(tmp_p, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- merge(tmp_beta, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- merge(tmp_sig, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- supp_betas_global %>%
+          relocate(all_of(sig_col_name), .after = all_of(p_col_name))
       }
     }
   }
+ #remove global and regional from column names
+ names(supp_betas_global) <- sub("global", "", names(supp_betas_global))
+ names(supp_betas_regional) <- sub("regional", "", names(supp_betas_regional))
+ #create column for global vs regional variables
+ supp_betas_global$region <- rep("global", dim(supp_betas_global)[1])
+ supp_betas_regional$region <- rep("region", dim(supp_betas_regional)[1])
+ ##add label for regions not plotted in figures
+ supp_betas_regional$noplot <- ifelse(supp_betas_regional$label %in% regions_notplotted$region_name, "X", NA)
+ #combine global and regional into one big dataframe
+ supp_betas_all <- bind_rows(supp_betas_regional, supp_betas_global)
+ 
+ ##determine order of columns
+ col_names <- names(supp_betas_all)
+ 
+ if(is.null(cols_order_custom)){
+ cols_order <- c("label", "region", "noplot",
+                 col_names[grepl("^bw__", col_names)],
+                 col_names[grepl("^bw_icv", col_names)],
+                 col_names[grepl("^bw_wh", col_names)],
+                 col_names[grepl("^bw_ses", col_names)],
+                 col_names[grepl("^bw_neocomp", col_names)],
+                 col_names[grepl("^ga__", col_names)],
+                 col_names[grepl("^ga_icv", col_names)],
+                 col_names[grepl("^ga_wh", col_names)],
+                 col_names[grepl("^ga_ses", col_names)],
+                 col_names[grepl("^ga_neocomp", col_names)],
+                 col_names[grepl("^ga38", col_names)],
+                 col_names[grepl("^bwp__", col_names)],
+                 col_names[grepl("^bwp_icv", col_names)],
+                 col_names[grepl("^bwp_wh", col_names)],
+                 col_names[grepl("^bwp_ses", col_names)],
+                 col_names[grepl("^bwp_ga", col_names)],
+                 col_names[grepl("^bw_pgs__", col_names)],
+                 col_names[grepl("^bw_pgs_icv", col_names)],
+                 col_names[grepl("^bw_pgs_wh", col_names)],
+                 col_names[grepl("^bw_pgs_ses", col_names)],
+                 col_names[grepl("^bw_bwpgs", col_names)],
+                 col_names[grepl("^neocomp__", col_names)],
+                 col_names[grepl("^neocomp_icv", col_names)],
+                 col_names[grepl("^neocomp_wh", col_names)],
+                 col_names[grepl("^neocomp_ses", col_names)],
+                 col_names[grepl("^gp__", col_names)],
+                 col_names[grepl("^gp_icv", col_names)],
+                 col_names[grepl("^gp_wh", col_names)],
+                 col_names[grepl("^gp_ses", col_names)],
+                 col_names[grepl("^gp_change", col_names)],
+                 col_names[grepl("^gptime1", col_names)],
+                 col_names[grepl("^gptime2", col_names)]
+                 )
+ 
+ }
+ else {
+   cols_order <- cols_order_custom
+ }
+ #check if all columns are accounted for
+ if (length(col_names[!(col_names %in% cols_order)])>0) {
+   stop_message <- paste("Not all columns are accounted for in ordering: ",paste(col_names[!(col_names %in% cols_order)], collapse = "\n"), sep = "\n")
+  stop(stop_message)
 }
-#combine tables and add column for global/region
-##remove "global" and "regional" from column names
-names(supp_betas_global) <- sub("global", "", names(supp_betas_global))
-names(supp_betas_regional) <- sub("regional", "", names(supp_betas_regional))
-##add column for global/regional label
-supp_betas_global$region <- rep("global", dim(supp_betas_global)[1])
-supp_betas_regional$region <- rep("region", dim(supp_betas_regional)[1])
-##add label for regions not plotted in figures
-supp_betas_regional$noplot <- ifelse(supp_betas_regional$label %in% regions_notplotted$region_name, "*", NA)
-supp_betas_all <- bind_rows(supp_betas_regional, supp_betas_global)
-#reorder the columns
-supp_betas_all <- supp_betas_all %>%
-  select(
-    any_of(c("label", "region", "noplot")),
-    matches("t1"),
-    matches("t2"),
-    matches("long"),
-    everything()
-  )
+   supp_betas_all <- supp_betas_all %>%
+     select(all_of(cols_order)) %>%
+     arrange(region) %>%
+     rename(phenotype = "label", group = "region", not_plotted = "noplot")
+  
+  return(supp_betas_all)
+}
+```
+##run function and save separate tables for t1, t2, t3
+```{r}
+supp_betas_table_folder <- paste0(save_path, "supplementary_betas_tables/")
+if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
+
+
+t1_betas <- make_betas_table(betas_folder, "t1")
 #save as csv
-filename <- paste0("supplementary_sigbetas_all", Sys.Date(), ".csv")
-write.csv(supp_betas_all, paste0(save_path, filename))
+filename <- paste0("t1_betas_all", Sys.Date(), ".csv")
+write.csv(t1_betas, paste0(save_path, filename))
+
+t2_betas <- make_betas_table(betas_folder, "t2")
+#save as csv
+filename <- paste0("t2_betas_all", Sys.Date(), ".csv")
+write.csv(t2_betas, paste0(save_path, filename))
+
+long_betas <- make_betas_table(betas_folder, "long")
+#save as csv
+filename <- paste0("long_betas_all", Sys.Date(), ".csv")
+write.csv(long_betas, paste0(save_path, filename))
 ```
 #Neonatal complications supp table
 ```{r}

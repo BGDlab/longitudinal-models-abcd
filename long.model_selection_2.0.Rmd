@@ -10,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 diagnostics <- TRUE
 generate <- FALSE
-save_fits <- FALSE
+save_fits <- TRUE
 save_best_models <- TRUE
 plot <- FALSE
 code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
