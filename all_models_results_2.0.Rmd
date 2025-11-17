@@ -2531,6 +2531,73 @@ write.csv(bwbwpgs_reg_table_global.t1, filename_global)
 write.csv(bwbwpgs_reg_table_full.t1, filename_regional)
 }
 ```
+
+####surface visualization of bw-pgs beta
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(pgs_bwbwpgs_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(pgs_bwbwpgs_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+pgs_bwbwpgs_reg_table_full.t1_sig_MC[!(pgs_bwbwpgs_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(pgs_bwbwpgs_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.pgs_bwbwpgs_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_pgs_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW_pgs in BW-BWpgs, T1"))
+
+(t1.pgs_bwbwpgs_aseg_plot <-ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_pgs_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW_pgs in BW-BWpgs, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(pgs_bwbwpgs_reg_table_full.t1_sig_MC %>% filter(bw_pgs_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(pgs_bwbwpgs_reg_table_full.t1_sig_MC$bw_pgs_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.pgs_bwbwpgs_dkt_plot, "pgs_bwpgs_ga_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.pgs_bwbwpgs_aseg_plot, "pgs_bwpgs_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+####surface visualization of bw beta
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(bw_bwbwpgs_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(bw_bwbwpgs_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+bw_bwbwpgs_reg_table_full.t1_sig_MC[!(bw_bwbwpgs_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(bw_bwbwpgs_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.bw_bwbwpgs_dkt_plot <-ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW in BW-BWpgs, T1"))
+
+(t1.bw_bwbwpgs_aseg_plot <-ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = bw_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "BW in BW-BWpgs, T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(bw_bwbwpgs_reg_table_full.t1_sig_MC %>% filter(bw_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(bw_bwbwpgs_reg_table_full.t1_sig_MC$bw_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.bw_bwbwpgs_dkt_plot, "bw_bwpgs_ga_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.bw_bwbwpgs_aseg_plot, "bw_bwpgs_t1_aseg", "pdf", figure_panels_folder)
+}
+```
 ###GA with neonatal comp as covar
 ####linear regressions
 ```{r}
@@ -7619,7 +7686,6 @@ panel_save(t2.icv_gp_full_dkt_plot, "icv_gp_full_t2_dkt", "pdf", figure_panels_f
 panel_save(t2.icv_gp_full_aseg_plot, "icv_gp_full_t2_aseg", "pdf", figure_panels_folder)
 }
 ```
-
 
 
 
