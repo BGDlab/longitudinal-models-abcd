@@ -37,6 +37,7 @@ library(growthstandards)
 library(gtsummary)
 library(svglite)
 
+
 source(paste0(code_path, "load_data_fct.R"))
 
 #df to map variable names onto names displayed on figures
@@ -976,7 +977,7 @@ panel_save(t2.long_cor_aseg_plot, "t2_long_aseg", "png", figure_panels_folder)
 }
 ```
 ##CMD-Centile Mahalanobis Distance
-for t1, t2, and t3
+for t1, t2, and longitudinal
 ```{r}
 length_names <- length(grep(".t1_centiles", names(full.df)))
 #Ensure all names are in the same order
@@ -1015,17 +1016,25 @@ cor.test(test.df$t2.cmd, test.df$long.cmd)
 (t1_t2_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = t2.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal() + labs (x = "timepoint 1", y = "timepoint 2"))
+  theme_minimal() + labs (x = "Timepoint 1 CMD", y = "Timepoint 2 CMD") +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
 
 (t1_long_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = long.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal() + labs (x = "timepoint 1", y = "conditional longitudinal"))
+  theme_minimal() + labs (x = "Timepoint 1 CMD", y = "Conditional-Longitudinal CMD") +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
+
 
 (t2_long_cmd <- ggplot(data = test.df, mapping = aes(x = t2.cmd, y = long.cmd)) + 
   geom_point(alpha = 0.3, color = "gray") + 
   geom_smooth(method = "lm", se = FALSE, color = "magenta") +
-  theme_minimal()  + labs (x = "timepoint 2", y = "conditional longitudinal"))
+  theme_minimal()  + labs (x = "Timepoint 2 CMD", y = "Conditional-Longitudinal CMD")+
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
+
 
 if(save_figures == TRUE){
 ggsave(plot=t1_t2_cmd, filename=paste0(figure_panels_folder,'t1_t2_cmd_plot.svg'), dpi=300, width=12, height=8)
@@ -1569,7 +1578,7 @@ filename_fig1 <- paste0(figure_panels_folder, "Fig1.svg")
 ggsave(plot=final_grid, filename=filename_fig1, dpi=300, width=12, height=8)
 }
 ```
-#Plots for Fig 2/Fig 3 and supplements
+#Panels for Fig 2/Fig 3 and supplements
 ##get number of infinite cells when qnormed, make a table of N per phenotype
 ```{r}
 
@@ -1740,7 +1749,7 @@ plot_data_aseg <- merge(ga_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
 ga_reg_table_full.t1_sig_MC[!(ga_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(ga_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
 
 #Setting manual limits (could match the colorbar limits between different variables)
-(t1.ga_dkt_plot <- ggplot(plot_data_dkt) +
+(t1.ga38_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = ga_beta)) +
@@ -1748,7 +1757,7 @@ ga_reg_table_full.t1_sig_MC[!(ga_reg_table_full.t1_sig_MC$label %in% plot_data_d
   theme_void()+
   labs(title = "GA 38 week term T1"))
 
-(t1.ga_aseg_plot <- ggplot(plot_data_aseg) +
+(t1.ga38_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = ga_beta)) +
   scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
@@ -1759,8 +1768,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_reg_tab
 print(paste0("Beta range of significant IDPs: ", range(ga_reg_table_full.t1_sig_MC$ga_beta)))
 
 if(save_figures == TRUE){
-panel_save(t1.ga_dkt_plot, "ga_38term_t1_dkt", "pdf", figure_panels_folder)
-panel_save(t1.ga_aseg_plot, "ga_38term_t1_aseg", "pdf", figure_panels_folder)
+panel_save(t1.ga38_dkt_plot, "ga_38term_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.ga38_aseg_plot, "ga_38term_t1_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###birth weight
@@ -4952,7 +4961,7 @@ plot_data_aseg <- merge(ga_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
 ga_reg_table_full.t2_sig_MC[!(ga_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(ga_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
 
 #Setting manual limits (could match the colorbar limits between different variables)
-(t2.ga_dkt_plot <- ggplot(plot_data_dkt) +
+(t2.ga38_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = ga_beta)) +
@@ -4960,7 +4969,7 @@ ga_reg_table_full.t2_sig_MC[!(ga_reg_table_full.t2_sig_MC$label %in% plot_data_d
   theme_void()+
   labs(title = "GA 38 week term t2"))
 
-(t2.ga_aseg_plot <- ggplot(plot_data_aseg) +
+(t2.ga38_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = ga_beta)) +
   scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
@@ -4971,8 +4980,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_reg_tab
 print(paste0("Beta range of significant IDPs: ", range(ga_reg_table_full.t2_sig_MC$ga_beta)))
 
 if(save_figures == TRUE){
-panel_save(t2.ga_dkt_plot, "ga_38term_t2_dkt", "pdf", figure_panels_folder)
-panel_save(t2.ga_aseg_plot, "ga_38term_t2_aseg", "pdf", figure_panels_folder)
+panel_save(t2.ga38_dkt_plot, "ga_38term_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.ga38_aseg_plot, "ga_38term_t2_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###birth weight
@@ -8172,7 +8181,7 @@ plot_data_aseg <- merge(ga_reg_table_full.long_sig_MC, ggseg::aseg, by = "label"
 ga_reg_table_full.long_sig_MC[!(ga_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(ga_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
 
 #Setting manual limits (could match the colorbar limits between different variables)
-(long.ga_dkt_plot <- ggplot(plot_data_dkt) +
+(long.ga38_dkt_plot <- ggplot(plot_data_dkt) +
   geom_brain(atlas = dk, 
              position = position_brain(hemi ~ side),
              aes(fill = ga_beta)) +
@@ -8180,7 +8189,7 @@ ga_reg_table_full.long_sig_MC[!(ga_reg_table_full.long_sig_MC$label %in% plot_da
   theme_void()+
   labs(title = "GA 38 week term long"))
 
-(long.ga_aseg_plot <- ggplot(plot_data_aseg) +
+(long.ga38_aseg_plot <- ggplot(plot_data_aseg) +
   geom_brain(atlas = aseg,
              aes(fill = ga_beta)) +
   scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-0.23, 0.23)) +
@@ -8191,8 +8200,8 @@ print(paste0("Number of significant IDPs after FDR correction: ", dim(ga_reg_tab
 print(paste0("Beta range of significant IDPs: ", range(ga_reg_table_full.long_sig_MC$ga_beta)))
 
 if(save_figures == TRUE){
-panel_save(long.ga_dkt_plot, "ga_38term_long_dkt", "pdf", figure_panels_folder)
-panel_save(long.ga_aseg_plot, "ga_38term_long_aseg", "pdf", figure_panels_folder)
+panel_save(long.ga38_dkt_plot, "ga_38term_long_dkt", "pdf", figure_panels_folder)
+panel_save(long.ga38_aseg_plot, "ga_38term_long_aseg", "pdf", figure_panels_folder)
 }
 ```
 ###birth weight
@@ -9801,7 +9810,7 @@ ga_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 ga_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ ga_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9872,7 +9881,7 @@ df$bw_zscore <- scale(long.full_test_df$birth_weight_oz_sum_adj)
 #Global phenotypes
 bw_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9890,7 +9899,7 @@ bw_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bw_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bw_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9959,7 +9968,7 @@ df$bwp_zscore <- qnorm(long.full_test_df$bweight_percentile)
 #Global phenotypes
 bwp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -9977,7 +9986,7 @@ bwp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 bwp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ bwp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -10129,7 +10138,7 @@ df$neocomp_zscore <- scale(long.full_test_df$neonatal_comp_total)
 #Global phenotypes
 neocomp_wh_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -10147,7 +10156,7 @@ neocomp_wh_reg_table_global.long_sig_MC
 #Regional phenotypes
 neocomp_wh_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
   df$x_zscore <- qnorm(x)
-  x_zscore[is.infinite(x_zscore)] <- NA
+  df$x_zscore[is.infinite(df$x_zscore)] <- NA
   lm <- lm(x_zscore ~ neocomp_zscore + weight_zscore + height_zscore, data = df)
   summary <- summary(lm)
   
@@ -11258,13 +11267,261 @@ panel_save(long.icv_gp_full_dkt_plot, "icv_gp_change_full_long_dkt", "pdf", figu
 panel_save(long.icv_gp_full_aseg_plot, "icv_gp_change_full_long_aseg", "pdf", figure_panels_folder)
 }
 ```
+#Put together Fig2/Fig3, supplement figure grids
+##define helper functions
+```{r}
+strip_plot <- function(p) {
+  p +
+    labs(x = NULL, y = NULL) +
+    theme(
+      legend.position = "none",
+      plot.title = element_blank(),
+      axis.title = element_blank()
+    ) 
+}
+```
+##make folder to save plot grids
+```{r}
+figures_grids_folder <- paste0(save_path, "figures_grids/")
+if (!dir.exists(figures_grids_folder)) dir.create(figures_grids_folder)
+
+```
+##Fig 2 - BW and GA
+```{r}
+fig2_panels <- mget(c("t1.bw_dkt_plot", "t2.bw_dkt_plot", "long.bw_dkt_plot",
+                    "t1.bw_aseg_plot", "t2.bw_aseg_plot", "long.bw_aseg_plot",
+                    "t1.ga_dkt_plot", "t2.ga_dkt_plot", "long.ga_dkt_plot",
+                    "t1.ga_aseg_plot", "t2.ga_aseg_plot", "long.ga_aseg_plot"))
+
+#fig2_panels
+
+fig2_panels <- lapply(fig2_panels, strip_plot)
+fig2_panels <- lapply(fig2_panels, ggdraw)
+# Create weights
+weights_width <- ifelse(grepl("dkt", names(fig2_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(fig2_panels)), 1.7, 1)
+fig2 <- plot_grid(plotlist = fig2_panels, 
+                      nrow = 4, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+fig2
+
+filename <- paste0(figures_grids_folder, "fig2_bwga_grid.pdf")
+cowplot::save_plot(filename, fig2, nrow = 4, ncol = 3)
+```
+##Fig 3 - P-factor
+```{r}
+fig3_panels <- mget(c("t1.gp_dkt_plot", "t2.gp_dkt_plot", "long.gp_dkt_plot",
+                    "t1.gp_aseg_plot", "t2.gp_aseg_plot", "long.gp_aseg_plot"))
+
+#fig3_panels
+
+fig3_panels <- lapply(fig3_panels, strip_plot)
+fig3_panels <- lapply(fig3_panels, ggdraw)
+# Create weights
+weights_width <- ifelse(grepl("dkt", names(fig3_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(fig3_panels)), 1.7, 1)
+fig3 <- plot_grid(plotlist = fig3_panels, 
+                      nrow = 2, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+fig3
+filename <- paste0(figures_grids_folder, "fig3_gp_grid.pdf")
+cowplot::save_plot(filename, fig3, nrow = 2, ncol = 3)
+```
+##Supp. Figure 1 - Centile Scores
+```{r}
+sfig1_panels <- mget(c("t1_t2_cmd", "t1_long_cmd", "t2_long_cmd",
+                    "t1.t2_cor_dkt_plot", "t1.long_cor_dkt_plot", "t2.long_cor_dkt_plot",
+                    "t1.t2_cor_aseg_plot", "t1.long_cor_aseg_plot", "t2.long_cor_aseg_plot"))
+
+#sfig1_panels
+
+sfig1_panels <- lapply(sfig1_panels, strip_plot)
+sfig1_panels <- lapply(sfig1_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig1_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig1_panels)), 1.7, 1)
+sfig1 <- plot_grid(plotlist = sfig1_panels, 
+                      nrow = 3, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+sfig1
+filename <- paste0(figures_grids_folder, "sfig1_cmdcor_grid.pdf")
+cowplot::save_plot(filename, sfig1, nrow = 3, ncol = 3)
+```
+##Supp. Figure 2 - BW Percentile
+```{r}
+sfig2_panels <- mget(c("t1.bwp_dkt_plot", "t2.bwp_dkt_plot", "long.bwp_dkt_plot",
+                    "t1.bwp_aseg_plot", "t2.bwp_aseg_plot", "long.bwp_aseg_plot"))
+
+#sfig2_panels
+
+sfig2_panels <- lapply(sfig2_panels, strip_plot)
+sfig2_panels <- lapply(sfig2_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig2_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig2_panels)), 1.7, 1)
+sfig2 <- plot_grid(plotlist = sfig2_panels, 
+                      nrow = 2, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+sfig2
+filename <- paste0(figures_grids_folder, "sfig2_bwp_grid.pdf")
+cowplot::save_plot(filename, sfig2, nrow = 2, ncol = 3)
+```
+##Supp. Figure 3 - BW PGS
+```{r}
+sfig3_panels <- mget(c("t1.bwpgs_dkt_plot", "t2.bwpgs_dkt_plot", "long.bwpgs_dkt_plot",
+                    "t1.bwpgs_aseg_plot", "t2.bwpgs_aseg_plot", "long.bwpgs_aseg_plot"))
+
+#sfig3_panels
+
+sfig3_panels <- lapply(sfig3_panels, strip_plot)
+sfig3_panels <- lapply(sfig3_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig3_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig3_panels)), 1.7, 1)
+sfig3 <- plot_grid(plotlist = sfig3_panels, 
+                      nrow = 2, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+sfig3
+filename <- paste0(figures_grids_folder, "sfig3_bwpgs_grid.pdf")
+cowplot::save_plot(filename, sfig3, nrow = 2, ncol = 3)
+```
+##Supp. Figure 4 - Neocomp
+```{r}
+sfig4_panels <- mget(c("t1.neocomp_dkt_plot", "t2.neocomp_dkt_plot", "long.neocomp_dkt_plot",
+                    "t1.neocomp_aseg_plot", "t2.neocomp_aseg_plot", "long.neocomp_aseg_plot"))
+
+#sfig4_panels
+
+sfig4_panels <- lapply(sfig4_panels, strip_plot)
+sfig4_panels <- lapply(sfig4_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig4_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig4_panels)), 1.7, 1)
+sfig4 <- plot_grid(plotlist = sfig4_panels, 
+                      nrow = 2, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "hv")
+sfig4
+filename <- paste0(figures_grids_folder, "sfig4_neocomp_grid.pdf")
+cowplot::save_plot(filename, sfig4, nrow = 2, ncol = 3)
+```
+##Supp. Figure 5 - SES Covars
+```{r}
+sfig5_panels <- mget(c("t1.bw_ses_dkt_plot", "t2.bw_ses_dkt_plot", "long.bw_ses_dkt_plot",
+                       "t1.bw_ses_aseg_plot", "t2.bw_ses_aseg_plot", "long.bw_ses_aseg_plot",
+                       "t1.ga_ses_dkt_plot", "t2.ga_ses_dkt_plot", "long.ga_ses_dkt_plot",
+                       "t1.ga_ses_aseg_plot", "t2.ga_ses_aseg_plot", "long.ga_ses_aseg_plot",
+                       "t1.bwp_ses_dkt_plot", "t2.bwp_ses_dkt_plot", "long.bwp_ses_dkt_plot",
+                       "t1.bwp_ses_aseg_plot", "t2.bwp_ses_aseg_plot", "long.bwp_ses_aseg_plot",
+                       "t1.bwpgs_ses_dkt_plot", "t2.bwpgs_ses_dkt_plot", "long.bwpgs_ses_dkt_plot",
+                       "t1.bwpgs_ses_aseg_plot", "t2.bwpgs_ses_aseg_plot", "long.bwpgs_ses_aseg_plot",
+                       "t1.neocomp_ses_dkt_plot", "t2.neocomp_ses_dkt_plot", "long.neocomp_ses_dkt_plot",
+                       "t1.neocomp_ses_aseg_plot", "t2.neocomp_ses_aseg_plot", "long.neocomp_ses_aseg_plot",
+                       "t1.gp_ses_dkt_plot", "t2.gp_ses_dkt_plot", "long.gp_ses_dkt_plot",
+                       "t1.gp_ses_aseg_plot", "t2.gp_ses_aseg_plot", "long.gp_ses_aseg_plot"))
+
+#sfig5_panels
+sfig5_panels <- lapply(sfig5_panels, strip_plot)
+sfig5_panels <- lapply(sfig5_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig5_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig5_panels)), 1.7, 1)
+sfig5 <- plot_grid(plotlist = sfig5_panels, 
+                      nrow = 12, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "none")
+sfig5
+filename <- paste0(figures_grids_folder, "sfig5_ses_grid.pdf")
+cowplot::save_plot(filename, sfig5, nrow = 12, ncol = 3)
+```
+##Supp. Figure 6 - wh Covars
+```{r}
+sfig6_panels <- mget(c("t1.bw_wh_dkt_plot", "t2.bw_wh_dkt_plot", "long.bw_wh_dkt_plot",
+                       "t1.bw_wh_aseg_plot", "t2.bw_wh_aseg_plot", "long.bw_wh_aseg_plot",
+                       "t1.ga_wh_dkt_plot", "t2.ga_wh_dkt_plot", "long.ga_wh_dkt_plot",
+                       "t1.ga_wh_aseg_plot", "t2.ga_wh_aseg_plot", "long.ga_wh_aseg_plot",
+                       "t1.bwp_wh_dkt_plot", "t2.bwp_wh_dkt_plot", "long.bwp_wh_dkt_plot",
+                       "t1.bwp_wh_aseg_plot", "t2.bwp_wh_aseg_plot", "long.bwp_wh_aseg_plot",
+                       "t1.bwpgs_wh_dkt_plot", "t2.bwpgs_wh_dkt_plot", "long.bwpgs_wh_dkt_plot",
+                       "t1.bwpgs_wh_aseg_plot", "t2.bwpgs_wh_aseg_plot", "long.bwpgs_wh_aseg_plot",
+                       "t1.neocomp_wh_dkt_plot", "t2.neocomp_wh_dkt_plot", "long.neocomp_wh_dkt_plot",
+                       "t1.neocomp_wh_aseg_plot", "t2.neocomp_wh_aseg_plot", "long.neocomp_wh_aseg_plot",
+                       "t1.gp_wh_dkt_plot", "t2.gp_wh_dkt_plot", "long.gp_wh_dkt_plot",
+                       "t1.gp_wh_aseg_plot", "t2.gp_wh_aseg_plot", "long.gp_wh_aseg_plot"))
+
+#sfig6_panels
+sfig6_panels <- lapply(sfig6_panels, strip_plot)
+sfig6_panels <- lapply(sfig6_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig6_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig6_panels)), 1.7, 1)
+sfig6 <- plot_grid(plotlist = sfig6_panels, 
+                      nrow = 12, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "none")
+sfig6
+filename <- paste0(figures_grids_folder, "sfig6_wh_grid.pdf")
+cowplot::save_plot(filename, sfig6, nrow = 12, ncol = 3)
+```
+##Supp. Figure 7 - SES Covars
+```{r}
+sfig7_panels <- mget(c("t1.icv_bw_full_dkt_plot", "t2.icv_bw_full_dkt_plot", "long.icv_bw_full_dkt_plot",
+                       "t1.icv_bw_full_aseg_plot", "t2.icv_bw_full_aseg_plot", "long.icv_bw_full_aseg_plot",
+                       "t1.icv_ga_full_dkt_plot", "t2.icv_ga_full_dkt_plot", "long.icv_ga_full_dkt_plot",
+                       "t1.icv_ga_full_aseg_plot", "t2.icv_ga_full_aseg_plot", "long.icv_ga_full_aseg_plot",
+                       "t1.icv_bwp_full_dkt_plot", "t2.icv_bwp_full_dkt_plot", "long.icv_bwp_full_dkt_plot",
+                       "t1.icv_bwp_full_aseg_plot", "t2.icv_bwp_full_aseg_plot", "long.icv_bwp_full_aseg_plot",
+                       "t1.icv_bw_pgs_full_dkt_plot", "t2.icv_bw_pgs_full_dkt_plot", "long.icv_bw_pgs_full_dkt_plot",
+                       "t1.icv_bw_pgs_full_aseg_plot", "t2.icv_bw_pgs_full_aseg_plot", "long.icv_bw_pgs_full_aseg_plot",
+                       "t1.icv_neocomp_full_dkt_plot", "t2.icv_neocomp_full_dkt_plot", "long.icv_neocomp_full_dkt_plot",
+                       "t1.icv_neocomp_full_aseg_plot", "t2.icv_neocomp_full_aseg_plot", "long.icv_neocomp_full_aseg_plot",
+                       "t1.icv_gp_full_dkt_plot", "t2.icv_gp_full_dkt_plot", "long.icv_gp_full_dkt_plot",
+                       "t1.icv_gp_full_aseg_plot", "t2.icv_gp_full_aseg_plot", "long.icv_gp_full_aseg_plot"))
+
+#sfig7_panels
+sfig7_panels <- lapply(sfig7_panels, strip_plot)
+sfig7_panels <- lapply(sfig7_panels, ggdraw)
+#Create weights
+weights_width <- ifelse(grepl("dkt", names(sfig7_panels)), 1.7, 1)
+weights_height <- ifelse(grepl("dkt", names(sfig7_panels)), 1.7, 1)
+sfig7 <- plot_grid(plotlist = sfig7_panels, 
+                      nrow = 12, 
+                      ncol = 3, 
+                      rel_widths = weights_width, 
+                      rel_heights = weights_height,
+                      align = "none")
+sfig7
+filename <- paste0(figures_grids_folder, "sfig7_icvfull_grid.pdf")
+cowplot::save_plot(filename, sfig7, nrow = 12, ncol = 3)
+```
 #Save scale images
 ### -0.23 to 0.23
 ```{r}
 # Create dummy data just to generate the colorbar
 df <- data.frame(x = 1, y = 1, beta = 0)
 
-scale <- ggplot(df, aes(x, y, fill = beta)) +
+beta_scale <- ggplot(df, aes(x, y, fill = beta)) +
   geom_tile() +
   scale_fill_gradient2(
     low = "#4878CF",
@@ -11283,14 +11540,16 @@ scale <- ggplot(df, aes(x, y, fill = beta)) +
     legend.text = element_text(size = 14),
     legend.title = element_text(size = 16)
   )
-scale
+beta_scale
+filename <- paste0(figures_grids_folder, "beta_scale.pdf")
+ggsave(filename, beta_scale)
 ```
 ### -1 to 1
 ```{r}
 # Create dummy data just to generate the colorbar
 df <- data.frame(x = 1, y = 1, corr = 0)
 
-scale_2 <- ggplot(df, aes(x, y, fill = corr)) +
+cor_scale <- ggplot(df, aes(x, y, fill = corr)) +
   geom_tile() +
   scale_fill_gradient2(
     low = "#4878CF",
@@ -11309,27 +11568,30 @@ scale_2 <- ggplot(df, aes(x, y, fill = corr)) +
     legend.text = element_text(size = 14),
     legend.title = element_text(size = 14)
   )
-scale_2
+cor_scale
+filename <- paste0(figures_grids_folder, "cor_scale.pdf")
+ggsave(filename, cor_scale)
 ```
-#Save legend for Fig 1
+#Save legend for Fig 1 --- need to make this in ggplot and use ggsave
 ```{r}
 colors <- c("#E69F00", "#56B4E9",  "#009E73", "#E0776E")
 df <- data.frame(colors = colors, label = c("A", "B", "C", "D"))
 
-# Create an empty plotting area
-plot.new()
-par(mar = c(0, 0, 0, 0))  # remove margins
+fig1_legend <- ggplot(df, aes(x = 1, y = 1, fill = label)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = df$colors) + 
+  theme_void() + 
+  guides(fill = guide_legend(
+    title = NULL,
+    override.aes = list(color = "black"))) +
+  theme(legend.text = element_text(size = 45),
+    legend.key.size = unit(2, "cm"))
 
-# Add only the legend
-legend(
-  "center",
-  legend = df$label,
-  fill = df$color,
-  border = "black",
-  cex = 5,
-  title = "",
-  box.lwd = 0  
-)
+fig1_legend <- get_legend(fig1_legend)
+fig1_legend <- ggdraw(fig1_legend)
+fig1_legend
+filename <- paste0(figures_grids_folder, "fig1_legend.pdf")
+ggsave(filename, fig1_legend)
 ```
 #Compile all lm() stats into supplementary tables 6-8
 all volumes (regional and global together)
@@ -11483,29 +11745,54 @@ if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
 t1_betas <- make_betas_table(betas_folder, "t1")
 #save as csv
 filename <- paste0("t1_betas_all", Sys.Date(), ".csv")
-write.csv(t1_betas, paste0(save_path, filename))
+write.csv(t1_betas, paste0(supp_betas_table_folder, filename))
 
 t2_betas <- make_betas_table(betas_folder, "t2")
 #save as csv
 filename <- paste0("t2_betas_all", Sys.Date(), ".csv")
-write.csv(t2_betas, paste0(save_path, filename))
+write.csv(t2_betas, paste0(supp_betas_table_folder, filename))
 
 long_betas <- make_betas_table(betas_folder, "long")
 #save as csv
 filename <- paste0("long_betas_all", Sys.Date(), ".csv")
-write.csv(long_betas, paste0(save_path, filename))
+write.csv(long_betas, paste0(supp_betas_table_folder, filename))
 ```
 #Neonatal complications supp table
 ```{r}
+get_counts <- function(x) {
+  counts <- table(factor(x, levels = c(0,1,999)), useNA = "ifany")
+  as.numeric(counts)
+}
+
 neonatal_vars <- c("devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p")
 abcd_neonatal <- read_csv("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/abcd_long_afterQC_neonatal_baseline.csv")
-#table for NAs and "don't know"s for each question (before splits)
-lapply(abcd_neonatal[, neonatal_vars], table, useNA = "ifany")
+
+#table for counts for each question (before splits)
+counts_before <- t(sapply(abcd_neonatal[, neonatal_vars], get_counts))
+colnames(counts_before) <- c("0_before", "1_before", "999_before", "NA_before")
+
 #merge with t1 for post-split data Ns
-t1.full_test_df <- merge(t1.full_test_df, abcd_neonatal %>% select(all_of(c("src_subject_id","devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p"))), by = "src_subject_id", all.x = TRUE)
-#table for NAs and "don't know"s for each question (after splits -- removing more subjects)
-lapply(t1.full_test_df[, neonatal_vars], table, useNA = "ifany")
+abcd_neonatal_post_split <- merge(
+  t1.full_test_df %>% select("src_subject_id", "neonatal_comp_total"),
+  abcd_neonatal %>% select(all_of(c("src_subject_id", neonatal_vars))),
+  by = "src_subject_id",
+  all.x = TRUE
+)
+
+##histogram
 ggplot(t1.full_test_df, aes(x = neonatal_comp_total)) + 
   geom_bar() +
   theme_minimal()
+
+#table for NAs and "don't know"s for each question (after splits -- more subjects removed)
+counts_after <- t(sapply(abcd_neonatal_post_split[, neonatal_vars], get_counts))
+colnames(counts_after) <- c("0_after", "1_after", "999_after", "NA_after")
+
+#combine into one table
+counts_table <- cbind(counts_before, counts_after)
+
+# neonatal vars as column
+#counts_table <- cbind(neonatal_variable = rownames(counts_table), counts_table)
+
+write.csv(counts_table, paste0(tableOne_folder,"neonatal_counts_supp_table.csv"), row.names = TRUE)
 ```
