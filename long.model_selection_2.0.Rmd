@@ -913,8 +913,7 @@ kstest_two %>% filter(p_adj < 0.05) %>% select(label)
 ##sOne
 ```{r}
 sOne_model_params_df <- data.frame(matrix(nrow = length(best_models_One), ncol = 18))
-names(sOne_model_params_df) <- c("group","column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
-                                 "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
+names(sOne_model_params_df) <- c("group","column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM","mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
                                  "sigma_intercept", "sigma_age", "sigma_sexM", 
                                  "nu_intercept", "nu_age", "nu_sexM", 
                                  "tau_intercept")
@@ -946,13 +945,15 @@ for (i in 1:length(best_models_One)){
   sOne_model_params_df$tau_intercept[i] <- model$tau.coefficients[["(Intercept)"]]
 }
 
-sOne_model_params_df$group <- ifelse(sOne_model_params_df$column_name %in% all_global_phenotypes, "global", "region")
+sOne_model_params_df$group <- ifelse(sub(".t2","", sOne_model_params_df$column_name) %in% all_global_phenotypes, "global", "region")
 
 column_order <- c("group","phenotype", "column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
                                  "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
                                  "sigma_intercept", "sigma_age", "sigma_sexM", 
                                  "nu_intercept", "nu_age", "nu_sexM", 
                                  "tau_intercept")
+
+sOne_model_params_df$column_name <- sub(".t2", "", sOne_model_params_df$column_name)
 
 sOne_model_params_df <- merge(sOne_model_params_df, name_mapping, by.x = "column_name", by.y = "abbreviation", all.x = TRUE, all.y = FALSE)
 
@@ -1002,13 +1003,15 @@ for (i in 1:length(best_models_One)){
   sTwo_model_params_df$tau_intercept[i] <- model$tau.coefficients[["(Intercept)"]]
 }
 
-sTwo_model_params_df$group <- ifelse(sTwo_model_params_df$column_name %in% all_global_phenotypes, "global", "region")
+sTwo_model_params_df$group <- ifelse(sub(".t2", "", sTwo_model_params_df$column_name) %in% all_global_phenotypes, "global", "region")
 
 column_order <- c("group","phenotype", "column_name", "family", "BIC", "mu_intercept", "mu_age", "mu_sexM", "mu_agesexM",
                                  "mu_randomsite_var", "mu_randomsite_std", "mu_randomsite_lambda",
                                  "sigma_intercept", "sigma_age", "sigma_sexM", 
                                  "nu_intercept", "nu_age", "nu_sexM", 
                                  "tau_intercept")
+
+sTwo_model_params_df$column_name <- sub(".t2", "", sTwo_model_params_df$column_name)
 
 sTwo_model_params_df <- merge(sTwo_model_params_df, name_mapping, by.x = "column_name", by.y = "abbreviation", all.x = TRUE, all.y = FALSE)
 

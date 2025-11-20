@@ -214,6 +214,10 @@ if (!dir.exists(dkt_folder)) dir.create(dkt_folder)
 tableOne_folder <- paste0(save_path, "table_one/")
 if (!dir.exists(tableOne_folder)) dir.create(tableOne_folder)
 
+supp_betas_table_folder <- paste0(save_path, "supplementary_betas_tables/")
+if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
+
+
 figure_panels_folder <- paste0(save_path, "figure_panels/")
 if (!dir.exists(figure_panels_folder)) dir.create(figure_panels_folder)
 
@@ -11738,10 +11742,6 @@ make_betas_table <- function(folder, pattern = NULL, cols_order_custom = NULL) {
 ```
 ##run function and save separate tables for t1, t2, t3
 ```{r}
-supp_betas_table_folder <- paste0(save_path, "supplementary_betas_tables/")
-if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
-
-
 t1_betas <- make_betas_table(betas_folder, "t1")
 #save as csv
 filename <- paste0("t1_betas_all", Sys.Date(), ".csv")
