@@ -1,0 +1,1985 @@
+---
+title: "look_back_later"
+author: "Eren Kafadar"
+date: "2025-12-04"
+output: html_document
+---
+#Analyses with global phenotypes
+###Global eTIV
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_eTIV)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_eTIV)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_eTIV)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_eTIV_ga <- lm(global_eTIV ~ gestational_age, data = median_cent_distinct)
+summary(lm_eTIV_ga)
+##linear reg
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore)
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore)
+summary(lm_eTIV_ga.age)
+##linear reg with ga*age interaction, quadratic age term
+lm_eTIV_ga.agesq <- lm(global_eTIV ~ ga * poly(age, 2, raw = TRUE), data = df.zscore)
+summary(lm_eTIV_ga.agesq)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore)
+summary(lm_eTIV_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV), color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+
+#Sub-groups
+
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_eTIV)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "pink") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_eTIV), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_eTIV_bw <- lm(global_eTIV ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_eTIV_bw)
+##linear reg
+lm_eTIV_bw <- lm(global_eTIV ~ bw, data = df.zscore)
+summary(lm_eTIV_bw)
+##linear reg with bw*age interaction
+lm_eTIV_bw.age <- lm(global_eTIV ~ bw*age, data = df.zscore)
+summary(lm_eTIV_bw.age)
+interact_plot(lm_eTIV_bw.age, pred = bw, modx = age_years, modx.values = quantile(df.zscore$age_years, probs = seq(0, 1, 0.1), na.rm = FALSE), linearity.check = TRUE, plot.points = TRUE)
+
+##linear reg with bw*sex interaction
+lm_eTIV_bw.sex <- lm(global_eTIV ~ bw*sex, data = df.zscore)
+summary(lm_eTIV_bw.sex)
+##linear reg with bw*preterm interaction
+lm_eTIV_bw.preterm <- lm(global_eTIV ~ bw*preterm, data = df.zscore)
+summary(lm_eTIV_bw.preterm)
+##linear reg with bw*ga interaction
+lm_eTIV_bw.ga <- lm(global_eTIV ~ bw*ga, data = df.zscore)
+summary(lm_eTIV_bw.ga)
+##linear reg with bw+weight+height as covars (need to adjust height/weight by age)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV), color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+```
+###Global eTIV sliding window with GA
+```{r}
+eTIV_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_eTIV", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(eTIV_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(eTIV_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global eTIV sliding window with BW
+```{r}
+eTIV_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_eTIV", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 4, 
+                             overlap = 1)
+
+eTIV_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_eTIV", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 4, 
+                             overlap = 1,
+                             dist_plot = TRUE)
+
+eTIV_bw_sw_mpr2 <- sliding_window(mpr2_cent_distinct, 
+                             phenotype = "global_eTIV", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 4, 
+                             overlap = 1)
+
+eTIV_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_eTIV", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 4, 
+                             overlap = 1,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(eTIV_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(eTIV_bw_sw_mpr2 %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(eTIV_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(eTIV_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+```
+###Global CortexVol
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_CortexVol)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_CortexVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_CortexVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_ctx_ga <- lm(global_CortexVol ~ gestational_age, data = median_cent_distinct)
+summary(lm_MeanThickness_ga)
+##linear reg
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore)
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore)
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore)
+summary(lm_ctx_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol), color = sex)) +geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_CortexVol)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_ctx_bw <- lm(global_CortexVol ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_ctx_bw)
+##linear reg
+lm_ctx_bw <- lm(global_CortexVol ~ bw, data = df.zscore)
+summary(lm_ctx_bw)
+##linear reg with bw*age interaction
+lm_ctx_bw.age <- lm(global_CortexVol ~ bw*age, data = df.zscore)
+summary(lm_ctx_bw.age)
+##linear reg with bw*sex interaction
+lm_ctx_bw.sex <- lm(global_CortexVol ~ bw*sex, data = df.zscore)
+summary(lm_ctx_bw.sex)
+##linear reg with bw*preterm interaction
+lm_ctx_bw.preterm <- lm(global_CortexVol ~ bw*preterm, data = df.zscore)
+summary(lm_ctx_bw.preterm)
+##linear reg with bw*ga interaction
+lm_ctx_bw.ga <- lm(global_CortexVol ~ bw*ga, data = df.zscore)
+summary(lm_ctx_bw.ga)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+```
+###Global CortexVol sliding window with GA
+```{r}
+CortexVol_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CortexVol", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(CortexVol_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(CortexVol_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global CortexVol sliding window with BW
+```{r}
+CortexVol_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CortexVol", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+CortexVol_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CortexVol", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(CortexVol_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(CortexVol_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(CortexVol_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(CortexVol_bw_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+###Global Cerebral WM
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_cbwm_ga <- lm(global_CerebralWhiteMatterVol ~ gestational_age, data = median_cent_distinct)
+summary(lm_cbwm_ga)
+##linear reg
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore)
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore)
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore)
+summary(lm_cbwm_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_cbwm_bw <- lm(global_CerebralWhiteMatterVol ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_cbwm_bw)
+##linear reg
+lm_cbwm_bw <- lm(global_CerebralWM ~ bw, data = df.zscore)
+summary(lm_cbwm_bw)
+##linear reg with bw*age interaction
+lm_cbwm_bw.age <- lm(global_CerebralWM ~ bw*age, data = df.zscore)
+summary(lm_cbwm_bw.age)
+##linear reg with bw*sex interaction
+lm_cbwm_bw.sex <- lm(global_CerebralWM ~ bw*sex, data = df.zscore)
+summary(lm_cbwm_bw.sex)
+##linear reg with bw*preterm interaction
+lm_cbwm_bw.preterm <- lm(global_CerebralWM ~ bw*preterm, data = df.zscore)
+summary(lm_cbwm_bw.preterm)
+##linear reg with bw*ga interaction
+lm_cbwm_bw.ga <- lm(global_CerebralWM ~ bw*ga, data = df.zscore)
+summary(lm_cbwm_bw.ga)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+```
+
+###Global CerebralWhiteMatterVol sliding window with GA
+```{r}
+CerebralWhiteMatterVol_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CerebralWhiteMatterVol", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(CerebralWhiteMatterVol_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(CerebralWhiteMatterVol_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global CerebralWhiteMatterVol sliding window with BW
+```{r}
+CerebralWhiteMatterVol_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CerebralWhiteMatterVol", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+CerebralWhiteMatterVol_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_CerebralWhiteMatterVol", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(CerebralWhiteMatterVol_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(CerebralWhiteMatterVol_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(CerebralWhiteMatterVol_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(CerebralWhiteMatterVol_bw_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+###Global Surface Area
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_SurfaceArea)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_SurfaceArea)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_SurfaceArea)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_sa_ga <- lm(global_SurfaceArea ~ gestational_age, data = median_cent_distinct)
+summary(lm_sa_ga)
+##linear reg
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore)
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore)
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore)
+summary(lm_sa_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga.sex)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_SurfaceArea)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_sa_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_sa_bw <- lm(global_SurfaceArea ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_sa_bw)
+##linear reg
+lm_sa_bw <- lm(global_SA ~ bw, data = df.zscore)
+summary(lm_sa_bw)
+##linear reg with bw*age interaction
+lm_sa_bw.age <- lm(global_SA ~ bw*age, data = df.zscore)
+summary(lm_sa_bw.age)
+##linear reg with bw*sex interaction
+lm_sa_bw.sex <- lm(global_SA ~ bw*sex, data = df.zscore)
+summary(lm_sa_bw.sex)
+##linear reg with bw*preterm interaction
+lm_sa_bw.preterm <- lm(global_SA ~ bw*preterm, data = df.zscore)
+summary(lm_sa_bw.preterm)
+##linear reg with bw*ga interaction
+lm_sa_bw.ga <- lm(global_SA ~ bw*ga, data = df.zscore)
+summary(lm_sa_bw.ga)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```
+
+###Global SurfaceArea sliding window with GA
+```{r}
+SurfaceArea_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_SurfaceArea", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(SurfaceArea_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(SurfaceArea_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global SurfaceArea sliding window with BW
+```{r}
+SurfaceArea_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_SurfaceArea", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+SurfaceArea_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_SurfaceArea", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(SurfaceArea_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(SurfaceArea_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(SurfaceArea_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(SurfaceArea_bw_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+###Global Mean Thickness
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_MeanThickness)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_MeanThickness)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_MeanThickness)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_meanthick_ga <- lm(global_MeanThickness ~ gestational_age, data = median_cent_distinct)
+summary(lm_meanthick_ga)
+##linear reg
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore)
+summary(lm_meanthick_ga)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with age at scan < 5 years
+age_mean <- attr(df.zscore$age_years, "scaled:center")
+age_std <- attr(df.zscore$age_years, "scaled:scale")
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(age_years < (5-age_mean)/age_std))
+summary(lm_meanthick_ga)
+
+##linear reg with age at scan > 10 years
+age_mean <- attr(df.zscore$age_years, "scaled:center")
+age_std <- attr(df.zscore$age_years, "scaled:scale")
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(age_years > (10-age_mean)/age_std))
+summary(lm_meanthick_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_meanthick_bw <- lm(global_MeanThickness ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_meanthick_bw)
+##linear reg
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore)
+summary(lm_meanthick_bw)
+##linear reg with bw*preterm interaction
+lm_meanthick_bw.preterm <- lm(global_meanthick ~ bw*preterm, data = df.zscore)
+summary(lm_meanthick_bw.preterm)
+##linear reg with bw*ga interaction
+lm_meanthick_bw.ga <- lm(global_meanthick ~ bw*ga, data = df.zscore)
+summary(lm_meanthick_bw.ga)
+
+##linear reg with bw-percentile, calculated using the intergrowth package
+median_cent_distinct <- median_cent_distinct %>%
+  mutate(gestAge_days = gestational_age*7+3) %>%
+  mutate(sex_recode= recode(sex, "M" = "Male", "F" = "Female"))
+median_cent_distinct$bweight_percentile <- igb_wtkg2centile(median_cent_distinct$gestAge_days, median_cent_distinct$birth_weight_kg, sex = median_cent_distinct$sex_recode)/100
+df.zscore$bwp <- qnorm(median_cent_distinct$bweight_percentile)
+##linear reg nonstandard
+lm_meanthick_bwp <- lm(global_MeanThickness ~ bweight_percentile, data = median_cent_distinct)
+summary(lm_meanthick_bwp)
+##linear reg
+lm_meanthick_bwp <- lm(global_meanthick ~ bwp, data = df.zscore)
+summary(lm_meanthick_bwp)
+
+##linear reg with everyone <40 weeks
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+
+##linear reg with everyone <32 weeks (very preterm definition)
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (32-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+lm_meanthick_bwp <- lm(global_meanthick ~ bwp, data = df.zscore %>% filter(ga < (32-ga_mean)/ga_std))
+summary(lm_meanthick_bwp)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(bweight_percentile) & !is.na(preterm)), aes(x = qnorm(bweight_percentile), y = qnorm(global_MeanThickness), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```
+###Global MeanThickness sliding window with GA
+```{r}
+MeanThickness_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_MeanThickness", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(MeanThickness_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(MeanThickness_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global MeanThickness sliding window with BW
+```{r}
+MeanThickness_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_MeanThickness", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+MeanThickness_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_MeanThickness", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(MeanThickness_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(MeanThickness_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(MeanThickness_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(MeanThickness_bw_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+###Global MeanThickness sliding window with BWp
+```{r}
+MeanThickness_bwp_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_MeanThickness", 
+                             pred_var = "bweight_percentile", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+MeanThickness_bwp_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "global_MeanThickness", 
+                             pred_var = "bweight_percentile", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(MeanThickness_bwp_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(MeanThickness_bwp_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(MeanThickness_bwp_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(MeanThickness_bwp_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+###Global Ventricle Volume
+####GA
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = ss_ventricles)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = ss_ventricles)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = ss_ventricles)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_vent_ga <- lm(ss_ventricles ~ gestational_age, data = median_cent_distinct)
+summary(lm_vent_ga)
+##linear reg
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore)
+summary(lm_vent_ga)
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_vent_ga)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_vent_ga)
+
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_vent_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_vent_bw <- lm(ss_ventricles ~ birth_weight_kg, data = median_cent_distinct)
+summary(lm_vent_bw)
+##linear reg
+lm_vent_bw <- lm(global_vent ~ bw, data = df.zscore)
+summary(lm_vent_bw)
+##linear reg with bw*preterm interaction
+lm_vent_bw.preterm <- lm(global_vent ~ bw*preterm, data = df.zscore)
+summary(lm_vent_bw.preterm)
+##linear reg with bw*ga interaction
+lm_vent_bw.ga <- lm(global_vent ~ bw*ga, data = df.zscore)
+summary(lm_vent_bw.ga)
+##linear reg with bw-percentile, calculated using the intergrowth package
+median_cent_distinct <- median_cent_distinct %>%
+  mutate(gestAge_days = gestational_age*7+3) %>%
+  mutate(sex_recode= recode(sex, "M" = "Male", "F" = "Female"))
+median_cent_distinct$bweight_percentile <- igb_wtkg2centile(median_cent_distinct$gestAge_days, median_cent_distinct$birth_weight_kg, sex = median_cent_distinct$sex_recode)/100
+df.zscore$bwp <- qnorm(median_cent_distinct$bweight_percentile)
+##linear reg nonstandard
+lm_vent_bwp <- lm(ss_ventricles ~ bweight_percentile, data = median_cent_distinct)
+summary(lm_vent_bwp)
+##linear reg
+lm_vent_bwp <- lm(global_vent ~ bwp, data = df.zscore)
+summary(lm_vent_bwp)
+
+##plot with lm line
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles), group = gestational_age, color = gestational_age)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(bweight_percentile)), aes(x = qnorm(bweight_percentile), y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_cent_distinct %>% filter(!is.na(bweight_percentile)), aes(x = qnorm(bweight_percentile), y = qnorm(ss_ventricles), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```
+
+
+###Global ss_ventricles sliding window with GA
+```{r}
+ss_ventricles_ga_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "ss_ventricles", 
+                             pred_var = "gestational_age", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+# plot beta vs midpoint age, color by significance
+ggplot(ss_ventricles_ga_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(ss_ventricles_ga_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+```
+###Global ss_ventricles sliding window with BW
+```{r}
+ss_ventricles_bw_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "ss_ventricles", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2)
+
+ss_ventricles_bw_bysex_sw <- sliding_window(median_cent_distinct, 
+                             phenotype = "ss_ventricles", 
+                             pred_var = "birth_weight_kg", 
+                             age_var = "age_years",
+                             window_size = 3, 
+                             overlap = 2,
+                             group = "sex")
+
+# plot beta vs midpoint age, color by significance
+ggplot(ss_ventricles_bw_sw %>% filter(N>100), aes(x = mid_age, y = beta, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+ggplot(ss_ventricles_bw_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  labs(x = "Age (years)", y = "GA Beta (slope)") +
+  theme_minimal()
+
+#By Sex
+ggplot(ss_ventricles_bw_bysex_sw, aes(x = mid_age, y = beta, color = group, linetype = sig, shape = sig)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  scale_linetype_manual(values = c("Significant" = "solid", "Not Significant" = "dashed")) +
+  scale_shape_manual(values = c("Significant" = 21, "Not Significant" = 4)) +
+  labs(x = "Age (years)", y = "Beta (slope)", color = "sex", linetype = "p < 0.05", shape = "p < 0.05") +
+  theme_minimal()
+
+# plot beta vs midpoint age, color by significance
+ggplot(ss_ventricles_bw_bysex_sw %>% filter(sig == "Significant"), aes(x = mid_age, y = beta, color = group)) +
+  geom_line() +
+  geom_point(size = 2) +
+  geom_text(aes(label = paste0("N=", N)), vjust = -1, size = 3) +
+  scale_color_manual(values = c("Female" = "red", "Male" = "blue")) +
+  labs(x = "Age (years)", y = "BW Beta (slope)", color = "sex") +
+  theme_minimal()
+```
+
+
+#Analyses with global phenotypes
+###Global eTIV
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_eTIV)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_eTIV)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_eTIV)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_eTIV_ga <- lm(global_eTIV ~ gestational_age, data = median_distinct)
+summary(lm_eTIV_ga)
+##linear reg
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore)
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore)
+summary(lm_eTIV_ga.age)
+##linear reg with ga*age interaction, quadratic age term
+lm_eTIV_ga.agesq <- lm(global_eTIV ~ ga * poly(age, 2, raw = TRUE), data = df.zscore)
+summary(lm_eTIV_ga.agesq)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore)
+summary(lm_eTIV_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_eTIV), color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+
+#Sub-groups
+
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_eTIV)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "pink") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_eTIV_ga <- lm(global_eTIV ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga)
+##linear reg with ga*age interaction
+lm_eTIV_ga.age <- lm(global_eTIV ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.age)
+##linear reg with ga*sex interaction
+lm_eTIV_ga.sex <- lm(global_eTIV ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_eTIV_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_eTIV), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_eTIV_bw <- lm(global_eTIV ~ birth_weight_kg, data = median_distinct)
+summary(lm_eTIV_bw)
+##linear reg
+lm_eTIV_bw <- lm(global_eTIV ~ bw, data = df.zscore)
+summary(lm_eTIV_bw)
+##linear reg with bw*age interaction
+lm_eTIV_bw.age <- lm(global_eTIV ~ bw*age, data = df.zscore)
+summary(lm_eTIV_bw.age)
+interact_plot(lm_eTIV_bw.age, pred = bw, modx = age_years, modx.values = quantile(df.zscore$age_years, probs = seq(0, 1, 0.1), na.rm = FALSE), linearity.check = TRUE, plot.points = TRUE)
+
+##linear reg with bw*sex interaction
+lm_eTIV_bw.sex <- lm(global_eTIV ~ bw*sex, data = df.zscore)
+summary(lm_eTIV_bw.sex)
+##linear reg with bw*preterm interaction
+lm_eTIV_bw.preterm <- lm(global_eTIV ~ bw*preterm, data = df.zscore)
+summary(lm_eTIV_bw.preterm)
+##linear reg with bw*ga interaction
+lm_eTIV_bw.ga <- lm(global_eTIV ~ bw*ga, data = df.zscore)
+summary(lm_eTIV_bw.ga)
+##linear reg with bw+weight+height as covars (need to adjust height/weight by age)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_eTIV), color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+```
+###Global CortexVol
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_CortexVol)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_CortexVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_CortexVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_ctx_ga <- lm(global_CortexVol ~ gestational_age, data = median_distinct)
+summary(lm_MeanThickness_ga)
+##linear reg
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore)
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore)
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore)
+summary(lm_ctx_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+##plot with lm line by sex
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CortexVol), color = sex)) +geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "cyan")) +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_CortexVol)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_ctx_ga <- lm(global_CortexVol ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga)
+##linear reg with ga*age interaction
+lm_ctx_ga.age <- lm(global_CortexVol ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.age)
+##linear reg with ga*sex interaction
+lm_ctx_ga.sex <- lm(global_CortexVol ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_ctx_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_ctx_bw <- lm(global_CortexVol ~ birth_weight_kg, data = median_distinct)
+summary(lm_ctx_bw)
+##linear reg
+lm_ctx_bw <- lm(global_CortexVol ~ bw, data = df.zscore)
+summary(lm_ctx_bw)
+##linear reg with bw*age interaction
+lm_ctx_bw.age <- lm(global_CortexVol ~ bw*age, data = df.zscore)
+summary(lm_ctx_bw.age)
+##linear reg with bw*sex interaction
+lm_ctx_bw.sex <- lm(global_CortexVol ~ bw*sex, data = df.zscore)
+summary(lm_ctx_bw.sex)
+##linear reg with bw*preterm interaction
+lm_ctx_bw.preterm <- lm(global_CortexVol ~ bw*preterm, data = df.zscore)
+summary(lm_ctx_bw.preterm)
+##linear reg with bw*ga interaction
+lm_ctx_bw.ga <- lm(global_CortexVol ~ bw*ga, data = df.zscore)
+summary(lm_ctx_bw.ga)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CortexVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+```
+###Global Cerebral WM
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_cbwm_ga <- lm(global_CerebralWhiteMatterVol ~ gestational_age, data = median_distinct)
+summary(lm_cbwm_ga)
+##linear reg
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore)
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore)
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore)
+summary(lm_cbwm_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_CerebralWhiteMatterVol)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_cbwm_ga <- lm(global_CerebralWM ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga)
+##linear reg with ga*age interaction
+lm_cbwm_ga.age <- lm(global_CerebralWM ~ ga*age, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.age)
+##linear reg with ga*sex interaction
+lm_cbwm_ga.sex <- lm(global_CerebralWM ~ ga*sex, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_cbwm_ga.sex)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_cbwm_bw <- lm(global_CerebralWhiteMatterVol ~ birth_weight_kg, data = median_distinct)
+summary(lm_cbwm_bw)
+##linear reg
+lm_cbwm_bw <- lm(global_CerebralWM ~ bw, data = df.zscore)
+summary(lm_cbwm_bw)
+##linear reg with bw*age interaction
+lm_cbwm_bw.age <- lm(global_CerebralWM ~ bw*age, data = df.zscore)
+summary(lm_cbwm_bw.age)
+##linear reg with bw*sex interaction
+lm_cbwm_bw.sex <- lm(global_CerebralWM ~ bw*sex, data = df.zscore)
+summary(lm_cbwm_bw.sex)
+##linear reg with bw*preterm interaction
+lm_cbwm_bw.preterm <- lm(global_CerebralWM ~ bw*preterm, data = df.zscore)
+summary(lm_cbwm_bw.preterm)
+##linear reg with bw*ga interaction
+lm_cbwm_bw.ga <- lm(global_CerebralWM ~ bw*ga, data = df.zscore)
+summary(lm_cbwm_bw.ga)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_CerebralWhiteMatterVol))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+```
+
+###Global Surface Area
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_SurfaceArea)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_SurfaceArea)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_SurfaceArea)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_sa_ga <- lm(global_SurfaceArea ~ gestational_age, data = median_distinct)
+summary(lm_sa_ga)
+##linear reg
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore)
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore)
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore)
+summary(lm_sa_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_sa_ga.sex)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age) & gestational_age <40), aes(x = gestational_age, y = global_SurfaceArea)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga)
+##linear reg with ga*age interaction
+lm_sa_ga.age <- lm(global_SA ~ ga*age, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga.age)
+##linear reg with ga*sex interaction
+lm_sa_ga.sex <- lm(global_SA ~ ga*sex, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_sa_ga.sex)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_sa_ga <- lm(global_SA ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_sa_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_sa_bw <- lm(global_SurfaceArea ~ birth_weight_kg, data = median_distinct)
+summary(lm_sa_bw)
+##linear reg
+lm_sa_bw <- lm(global_SA ~ bw, data = df.zscore)
+summary(lm_sa_bw)
+##linear reg with bw*age interaction
+lm_sa_bw.age <- lm(global_SA ~ bw*age, data = df.zscore)
+summary(lm_sa_bw.age)
+##linear reg with bw*sex interaction
+lm_sa_bw.sex <- lm(global_SA ~ bw*sex, data = df.zscore)
+summary(lm_sa_bw.sex)
+##linear reg with bw*preterm interaction
+lm_sa_bw.preterm <- lm(global_SA ~ bw*preterm, data = df.zscore)
+summary(lm_sa_bw.preterm)
+##linear reg with bw*ga interaction
+lm_sa_bw.ga <- lm(global_SA ~ bw*ga, data = df.zscore)
+summary(lm_sa_bw.ga)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_SurfaceArea), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```
+
+###Global Mean Thickness
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = global_MeanThickness)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = global_MeanThickness)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = global_MeanThickness)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_meanthick_ga <- lm(global_MeanThickness ~ gestational_age, data = median_distinct)
+summary(lm_meanthick_ga)
+##linear reg
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore)
+summary(lm_meanthick_ga)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_meanthick_ga)
+
+##linear reg with age at scan < 5 years
+age_mean <- attr(df.zscore$age_years, "scaled:center")
+age_std <- attr(df.zscore$age_years, "scaled:scale")
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(age_years < (5-age_mean)/age_std))
+summary(lm_meanthick_ga)
+
+##linear reg with age at scan > 10 years
+age_mean <- attr(df.zscore$age_years, "scaled:center")
+age_std <- attr(df.zscore$age_years, "scaled:scale")
+lm_meanthick_ga <- lm(global_meanthick ~ ga, data = df.zscore %>% filter(age_years > (10-age_mean)/age_std))
+summary(lm_meanthick_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_meanthick_bw <- lm(global_MeanThickness ~ birth_weight_kg, data = median_distinct)
+summary(lm_meanthick_bw)
+##linear reg
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore)
+summary(lm_meanthick_bw)
+##linear reg with bw*preterm interaction
+lm_meanthick_bw.preterm <- lm(global_meanthick ~ bw*preterm, data = df.zscore)
+summary(lm_meanthick_bw.preterm)
+##linear reg with bw*ga interaction
+lm_meanthick_bw.ga <- lm(global_meanthick ~ bw*ga, data = df.zscore)
+summary(lm_meanthick_bw.ga)
+
+##linear reg with bw-percentile, calculated using the intergrowth package
+median_distinct <- median_distinct %>%
+  mutate(gestAge_days = gestational_age*7+3) %>%
+  mutate(sex_recode= recode(sex, "M" = "Male", "F" = "Female"))
+median_distinct$bweight_percentile <- igb_wtkg2centile(median_distinct$gestAge_days, median_distinct$birth_weight_kg, sex = median_distinct$sex_recode)/100
+df.zscore$bwp <- qnorm(median_distinct$bweight_percentile)
+##linear reg nonstandard
+lm_meanthick_bwp <- lm(global_MeanThickness ~ bweight_percentile, data = median_distinct)
+summary(lm_meanthick_bwp)
+##linear reg
+lm_meanthick_bwp <- lm(global_meanthick ~ bwp, data = df.zscore)
+summary(lm_meanthick_bwp)
+
+##linear reg with everyone <40 weeks
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+
+##linear reg with everyone <32 weeks (very preterm definition)
+lm_meanthick_bw <- lm(global_meanthick ~ bw, data = df.zscore %>% filter(ga < (32-ga_mean)/ga_std))
+summary(lm_meanthick_bw)
+lm_meanthick_bwp <- lm(global_meanthick ~ bwp, data = df.zscore %>% filter(ga < (32-ga_mean)/ga_std))
+summary(lm_meanthick_bwp)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(global_MeanThickness), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(bweight_percentile) & !is.na(preterm)), aes(x = qnorm(bweight_percentile), y = qnorm(global_MeanThickness), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```
+###Global Ventricle Volume
+####GA
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = ss_ventricles)) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = as.factor(gestational_age), y = ss_ventricles)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = preterm, y = ss_ventricles)) +
+  geom_point() +
+  geom_boxplot() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_vent_ga <- lm(ss_ventricles ~ gestational_age, data = median_distinct)
+summary(lm_vent_ga)
+##linear reg
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore)
+summary(lm_vent_ga)
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(gestational_age)), aes(x = gestational_age, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+#Sub-groups
+ga_mean <- attr(df.zscore$ga, "scaled:center")
+ga_std <- attr(df.zscore$ga, "scaled:scale")
+##linear reg with everyone <40 weeks
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga < (40-ga_mean)/ga_std))
+summary(lm_vent_ga)
+
+##linear reg with everyone <37 weeks (WHO preterm definition)
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga < (37-ga_mean)/ga_std))
+summary(lm_vent_ga)
+
+
+##linear reg with everyone >37 weeks (WHO preterm definition)
+lm_vent_ga <- lm(global_vent ~ ga, data = df.zscore %>% filter(ga > (37-ga_mean)/ga_std))
+summary(lm_vent_ga)
+```
+####BW
+```{r}
+##plots
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  theme_minimal()
+
+##linear reg nonstandard
+lm_vent_bw <- lm(ss_ventricles ~ birth_weight_kg, data = median_distinct)
+summary(lm_vent_bw)
+##linear reg
+lm_vent_bw <- lm(global_vent ~ bw, data = df.zscore)
+summary(lm_vent_bw)
+##linear reg with bw*preterm interaction
+lm_vent_bw.preterm <- lm(global_vent ~ bw*preterm, data = df.zscore)
+summary(lm_vent_bw.preterm)
+##linear reg with bw*ga interaction
+lm_vent_bw.ga <- lm(global_vent ~ bw*ga, data = df.zscore)
+summary(lm_vent_bw.ga)
+##linear reg with bw-percentile, calculated using the intergrowth package
+median_distinct <- median_distinct %>%
+  mutate(gestAge_days = gestational_age*7+3) %>%
+  mutate(sex_recode= recode(sex, "M" = "Male", "F" = "Female"))
+median_distinct$bweight_percentile <- igb_wtkg2centile(median_distinct$gestAge_days, median_distinct$birth_weight_kg, sex = median_distinct$sex_recode)/100
+df.zscore$bwp <- qnorm(median_distinct$bweight_percentile)
+##linear reg nonstandard
+lm_vent_bwp <- lm(ss_ventricles ~ bweight_percentile, data = median_distinct)
+summary(lm_vent_bwp)
+##linear reg
+lm_vent_bwp <- lm(global_vent ~ bwp, data = df.zscore)
+summary(lm_vent_bwp)
+
+##plot with lm line
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "green") +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(birth_weight_kg) & !is.na(preterm)), aes(x = birth_weight_kg, y = qnorm(ss_ventricles), group = gestational_age, color = gestational_age)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(bweight_percentile)), aes(x = qnorm(bweight_percentile), y = qnorm(ss_ventricles))) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+
+ggplot(median_distinct %>% filter(!is.na(bweight_percentile)), aes(x = qnorm(bweight_percentile), y = qnorm(ss_ventricles), group = preterm, color = preterm)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal()
+```

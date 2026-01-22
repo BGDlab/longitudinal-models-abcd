@@ -2,8 +2,8 @@
 #### Change job-name.
 #### This script is for split TWO - specify in name of output folder and job name.
 #!/bin/bash
-#SBATCH --job-name=t1_BCT_TWO
-#SBATCH --output=/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t1_BCT_vol_splitTWO_2.0/out_messages/%x_%A_%a_output.txt
+#SBATCH --job-name=t1_sa_BCT_TWO
+#SBATCH --output=/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/additional_results/gamlss_fits_t1_BCT_sa_splitTWO/out_messages/%x_%A_%a_output.txt
 #SBATCH --time=04:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
