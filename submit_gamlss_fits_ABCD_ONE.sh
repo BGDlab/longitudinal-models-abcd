@@ -1,13 +1,20 @@
+#!/bin/bash
 #### Before running this script: change path for output, should be a folder called "out_messages" inside the out_folder.
 #### Change job-name.
 #### This script is for split ONE - specify in name of output folder and job name.
+<<<<<<< Updated upstream
 #!/bin/bash
 #SBATCH --job-name=t1_BCT_ONE
 #SBATCH --output=/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/gamlss_fits_t1_BCT_vol_splitONE_2.0/out_messages/%x_%A_%a_output.txt
 #SBATCH --time=04:00:00
+=======
+#SBATCH --job-name=t1_sa_BCT_ONE
+#SBATCH --output=/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/additional_results/gamlss_fits_t1_BCT_sa_splitONE/out_messages/%x_%A_%a_output.txt
+#SBATCH --time=08:00:00
+>>>>>>> Stashed changes
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=4G
+#SBATCH --mem=8G
 
 # Directory containing the model structures
 MODEL_DIR=$1
