@@ -1,0 +1,3113 @@
+
+---
+title: "psychopathology_subfactors_results"
+author: "Eren Kafadar"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+#Main Setup
+```{r setup, include=FALSE}
+save_tables <- TRUE
+save_figures <- TRUE
+code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
+save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
+data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
+knitr::opts_chunk$set(echo = TRUE)
+#Load libraries
+library(dplyr)
+library(magrittr)
+library(readr)
+library(stringr)
+library(gamlss) #to fit model
+require(gamlss.ggplots)
+library(splines)
+library(tidyr)
+library(gamlssTools) #Margaret's package
+#For figures/plotting
+library(ggplot2)
+library(gridExtra)
+library(ggsegDKT)
+library(ggseg)
+library(ggpubr)
+library(glue)
+library(ggcorrplot)
+library(cowplot)
+library(egg)
+library(interactions)
+library(growthstandards)
+library(gtsummary)
+library(svglite)
+library(patchwork)
+
+
+source(paste0(code_path, "load_data_fct.R"))
+source("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/long_centile_sim_plot.R")
+
+#df to map variable names onto names displayed on figures
+name_mapping <- data.frame(
+  abbreviation = c(
+     "smri_vol_cdk_totallh", "smri_vol_cdk_totalrh", "smri_vol_cdk_total",   
+     "totalWM_cb", "totalWM_crb", "totalGM_crb",
+     
+    "smri_vol_scs_cbwmatterlh", "smri_vol_scs_ltventriclelh", "smri_vol_scs_inflatventlh",
+    "smri_vol_scs_crbwmatterlh", "smri_vol_scs_crbcortexlh", "smri_vol_scs_tplh",
+    "smri_vol_scs_caudatelh", "smri_vol_scs_putamenlh", "smri_vol_scs_pallidumlh",
+    "smri_vol_scs_3rdventricle", "smri_vol_scs_4thventricle", "smri_vol_scs_bstem",
+    "smri_vol_scs_hpuslh", "smri_vol_scs_amygdalalh", "smri_vol_scs_csf",
+    "smri_vol_scs_lesionlh", "smri_vol_scs_aal", "smri_vol_scs_vedclh",
+    
+    "smri_vol_scs_cbwmatterrh", "smri_vol_scs_ltventriclerh", "smri_vol_scs_inflatventrh",
+    "smri_vol_scs_crbwmatterrh", "smri_vol_scs_crbcortexrh", "smri_vol_scs_tprh",
+    "smri_vol_scs_caudaterh", "smri_vol_scs_putamenrh", "smri_vol_scs_pallidumrh",
+    "smri_vol_scs_hpusrh", "smri_vol_scs_amygdalarh", "smri_vol_scs_lesionrh",
+    "smri_vol_scs_aar", "smri_vol_scs_vedcrh", 
+    
+    "smri_vol_scs_wmhint",
+    "smri_vol_scs_wmhintlh", "smri_vol_scs_wmhintrh", 
+    
+    "smri_vol_scs_ccps",
+    "smri_vol_scs_ccmidps", "smri_vol_scs_ccct", "smri_vol_scs_ccmidat",
+    "smri_vol_scs_ccat", 
+    
+    "smri_vol_scs_wholeb", "smri_vol_scs_latventricles",
+    "smri_vol_scs_allventricles", "smri_vol_scs_intracranialv", "smri_vol_scs_suprateialv",
+    "smri_vol_scs_subcorticalgv",
+    
+    "smri_vol_cdk_banksstslh", "smri_vol_cdk_cdacatelh", "smri_vol_cdk_cdmdfrlh",
+    "smri_vol_cdk_cuneuslh", "smri_vol_cdk_ehinallh", "smri_vol_cdk_fusiformlh",
+    "smri_vol_cdk_ifpllh", "smri_vol_cdk_iftmlh", "smri_vol_cdk_ihcatelh",
+    "smri_vol_cdk_locclh", "smri_vol_cdk_lobfrlh", "smri_vol_cdk_linguallh",
+    "smri_vol_cdk_mobfrlh", "smri_vol_cdk_mdtmlh", "smri_vol_cdk_parahpallh",
+    "smri_vol_cdk_paracnlh", "smri_vol_cdk_parsopclh", "smri_vol_cdk_parsobislh",
+    "smri_vol_cdk_parstgrislh", "smri_vol_cdk_pericclh", "smri_vol_cdk_postcnlh",
+    "smri_vol_cdk_ptcatelh", "smri_vol_cdk_precnlh", "smri_vol_cdk_pclh",
+    "smri_vol_cdk_rracatelh", "smri_vol_cdk_rrmdfrlh", "smri_vol_cdk_sufrlh",
+    "smri_vol_cdk_supllh", "smri_vol_cdk_sutmlh", "smri_vol_cdk_smlh",
+    "smri_vol_cdk_frpolelh", "smri_vol_cdk_tmpolelh", "smri_vol_cdk_trvtmlh",
+    "smri_vol_cdk_insulalh",
+    
+     "smri_vol_cdk_banksstsrh", "smri_vol_cdk_cdacaterh", "smri_vol_cdk_cdmdfrrh",
+    "smri_vol_cdk_cuneusrh", "smri_vol_cdk_ehinalrh", "smri_vol_cdk_fusiformrh",
+    "smri_vol_cdk_ifplrh", "smri_vol_cdk_iftmrh", "smri_vol_cdk_ihcaterh",
+    "smri_vol_cdk_loccrh", "smri_vol_cdk_lobfrrh", "smri_vol_cdk_lingualrh",
+    "smri_vol_cdk_mobfrrh", "smri_vol_cdk_mdtmrh", "smri_vol_cdk_parahpalrh",
+    "smri_vol_cdk_paracnrh", "smri_vol_cdk_parsopcrh", "smri_vol_cdk_parsobisrh",
+    "smri_vol_cdk_parstgrisrh", "smri_vol_cdk_periccrh", "smri_vol_cdk_postcnrh",
+    "smri_vol_cdk_ptcaterh", "smri_vol_cdk_precnrh", "smri_vol_cdk_pcrh",
+    "smri_vol_cdk_rracaterh", "smri_vol_cdk_rrmdfrrh", "smri_vol_cdk_sufrrh",
+    "smri_vol_cdk_suplrh", "smri_vol_cdk_sutmrh", "smri_vol_cdk_smrh",
+    "smri_vol_cdk_frpolerh", "smri_vol_cdk_tmpolerh", "smri_vol_cdk_trvtmrh",
+    "smri_vol_cdk_insularh"
+  ),
+  region_name = c(
+    "Left-Cerebral_Cortex", "Right-Cerebral-Cortex", "Total-Cerebral-Cortex",
+    "Total_Cerebral-WM", "Total_Cerebellum-WM", "Total-Cerebellum-Cortex",
+    
+    "Left-Cerebral-White-Matter", "Left-Lateral-Ventricle", "Left-Inf-Lat-Vent",
+    "Left-Cerebellum-White-Matter", "Left-Cerebellum-Cortex", "Left-Thalamus-Proper",
+    "Left-Caudate", "Left-Putamen", "Left-Pallidum",
+    "x3rd-ventricle", "x4th-ventricle", "Brain-Stem",
+    "Left-Hippocampus", "Left-Amygdala", "Cerebrospinal-Fluid",
+    "Left-Lesion", "Left-Accumbens-Area", "Left-VentralDC",
+    
+   "Right-Cerebral-White-Matter", "Right-Lateral-Ventricle", "Right-Inf-Lat-Vent",
+    "Right-Cerebellum-White-Matter", "Right-Cerebellum-Cortex", "Right-Thalamus-Proper",
+    "Right-Caudate", "Right-Putamen", "Right-Pallidum",
+    "Right-Hippocampus", "Right-Amygdala",
+    "Right-Lesion", "Right-Accumbens-Area", "Right-VentralDC",
+    
+    "WM-Hypointensities","Left-WM-Hypointensities", "Right-WM-Hypointensities",
+   
+   "CC_Posterior","CC_Mid_Posterior", "CC_Central", "CC_Mid_Anterior",
+    "CC_Anterior", 
+   
+   "WholeBrain", "LatVentricles","AllVentricles", "IntracranialVolume", 
+   "SupratentorialVolume", "SubcorticalGrayVolume",
+   
+     "lh_bankssts", "lh_caudalanteriorcingulate", "lh_caudalmiddlefrontal",
+    "lh_cuneus", "lh_entorhinal", "lh_fusiform",
+    "lh_inferiorparietal", "lh_inferiortemporal", "lh_isthmuscingulate",
+    "lh_lateraloccipital", "lh_lateralorbitofrontal", "lh_lingual",
+    "lh_medialorbitofrontal", "lh_middletemporal", "lh_parahippocampal",
+    "lh_paracentral", "lh_parsopercularis", "lh_parsorbitalis",
+    "lh_parstriangularis", "lh_pericalcarine", "lh_postcentral",
+    "lh_posteriorcingulate", "lh_precentral", "lh_precuneus", "lh_rostralanteriorcingulate",
+    "lh_rostralmiddlefrontal", "lh_superiorfrontal", "lh_superiorparietal",
+    "lh_superiortemporal", "lh_supramarginal", "lh_frontalpole",
+    "lh_temporalpole", "lh_transversetemporal", "lh_insula",
+   
+     "rh_bankssts", "rh_caudalanteriorcingulate", "rh_caudalmiddlefrontal",
+    "rh_cuneus", "rh_entorhinal", "rh_fusiform",
+    "rh_inferiorparietal", "rh_inferiortemporal", "rh_isthmuscingulate",
+    "rh_lateraloccipital", "rh_lateralorbitofrontal", "rh_lingual",
+    "rh_medialorbitofrontal", "rh_middletemporal", "rh_parahippocampal",
+    "rh_paracentral", "rh_parsopercularis", "rh_parsorbitalis",
+    "rh_parstriangularis", "rh_pericalcarine", "rh_postcentral",
+    "rh_posteriorcingulate", "rh_precentral", "rh_precuneus", "rh_rostralanteriorcingulate",
+    "rh_rostralmiddlefrontal", "rh_superiorfrontal", "rh_superiorparietal",
+    "rh_superiortemporal", "rh_supramarginal", "rh_frontalpole",
+    "rh_temporalpole", "rh_transversetemporal", "rh_insula"
+    )
+)
+
+phenotypes_for_MC <- c(
+    "smri_vol_scs_ltventriclelh", "smri_vol_scs_inflatventlh",
+    "smri_vol_scs_crbwmatterlh", "smri_vol_scs_crbcortexlh", "smri_vol_scs_tplh",
+    "smri_vol_scs_caudatelh", "smri_vol_scs_putamenlh", "smri_vol_scs_pallidumlh",
+    "smri_vol_scs_3rdventricle", "smri_vol_scs_4thventricle", "smri_vol_scs_bstem",
+    "smri_vol_scs_hpuslh", "smri_vol_scs_amygdalalh", "smri_vol_scs_aal", "smri_vol_scs_vedclh",
+    
+    "smri_vol_scs_ltventriclerh", "smri_vol_scs_inflatventrh",
+    "smri_vol_scs_crbwmatterrh", "smri_vol_scs_crbcortexrh", "smri_vol_scs_tprh",
+    "smri_vol_scs_caudaterh", "smri_vol_scs_putamenrh", "smri_vol_scs_pallidumrh",
+    "smri_vol_scs_hpusrh", "smri_vol_scs_amygdalarh",
+    "smri_vol_scs_aar", "smri_vol_scs_vedcrh", 
+    
+    "smri_vol_scs_ccps",
+    "smri_vol_scs_ccmidps", "smri_vol_scs_ccct", "smri_vol_scs_ccmidat",
+    "smri_vol_scs_ccat",
+    
+    "smri_vol_cdk_banksstslh", "smri_vol_cdk_cdacatelh", "smri_vol_cdk_cdmdfrlh",
+    "smri_vol_cdk_cuneuslh", "smri_vol_cdk_ehinallh", "smri_vol_cdk_fusiformlh",
+    "smri_vol_cdk_ifpllh", "smri_vol_cdk_iftmlh", "smri_vol_cdk_ihcatelh",
+    "smri_vol_cdk_locclh", "smri_vol_cdk_lobfrlh", "smri_vol_cdk_linguallh",
+    "smri_vol_cdk_mobfrlh", "smri_vol_cdk_mdtmlh", "smri_vol_cdk_parahpallh",
+    "smri_vol_cdk_paracnlh", "smri_vol_cdk_parsopclh", "smri_vol_cdk_parsobislh",
+    "smri_vol_cdk_parstgrislh", "smri_vol_cdk_pericclh", "smri_vol_cdk_postcnlh",
+    "smri_vol_cdk_ptcatelh", "smri_vol_cdk_precnlh", "smri_vol_cdk_pclh",
+    "smri_vol_cdk_rracatelh", "smri_vol_cdk_rrmdfrlh", "smri_vol_cdk_sufrlh",
+    "smri_vol_cdk_supllh", "smri_vol_cdk_sutmlh", "smri_vol_cdk_smlh",
+    "smri_vol_cdk_frpolelh", "smri_vol_cdk_tmpolelh", "smri_vol_cdk_trvtmlh",
+    "smri_vol_cdk_insulalh",
+    
+     "smri_vol_cdk_banksstsrh", "smri_vol_cdk_cdacaterh", "smri_vol_cdk_cdmdfrrh",
+    "smri_vol_cdk_cuneusrh", "smri_vol_cdk_ehinalrh", "smri_vol_cdk_fusiformrh",
+    "smri_vol_cdk_ifplrh", "smri_vol_cdk_iftmrh", "smri_vol_cdk_ihcaterh",
+    "smri_vol_cdk_loccrh", "smri_vol_cdk_lobfrrh", "smri_vol_cdk_lingualrh",
+    "smri_vol_cdk_mobfrrh", "smri_vol_cdk_mdtmrh", "smri_vol_cdk_parahpalrh",
+    "smri_vol_cdk_paracnrh", "smri_vol_cdk_parsopcrh", "smri_vol_cdk_parsobisrh",
+    "smri_vol_cdk_parstgrisrh", "smri_vol_cdk_periccrh", "smri_vol_cdk_postcnrh",
+    "smri_vol_cdk_ptcaterh", "smri_vol_cdk_precnrh", "smri_vol_cdk_pcrh",
+    "smri_vol_cdk_rracaterh", "smri_vol_cdk_rrmdfrrh", "smri_vol_cdk_sufrrh",
+    "smri_vol_cdk_suplrh", "smri_vol_cdk_sutmrh", "smri_vol_cdk_smrh",
+    "smri_vol_cdk_frpolerh", "smri_vol_cdk_tmpolerh", "smri_vol_cdk_trvtmrh",
+    "smri_vol_cdk_insularh"
+  )
+
+global_phenotypes <- c("smri_vol_cdk_total", "totalWM_cb", "smri_vol_scs_allventricles", "smri_vol_scs_subcorticalgv")
+
+phenotypes_to_fit <- (c(phenotypes_for_MC, global_phenotypes, "smri_vol_scs_wholeb", "smri_vol_scs_wholeb", "totalWM_crb", "totalGM_crb", "smri_vol_scs_csf", "smri_vol_cdk_totallh", "smri_vol_cdk_totalrh", "smri_vol_scs_cbwmatterlh", "smri_vol_scs_cbwmatterrh"))
+
+#save phenotypes not plotted with ggseg surface plots
+plot_data_dkt <- merge(name_mapping, ggseg::dk, by.x = "region_name", by.y = "label")
+plot_data_aseg <- merge(name_mapping, ggseg::aseg, by.x = "region_name", by.y = "label")
+
+#Regions not matched in atlases that are tested
+regions_notplotted <- name_mapping[!(name_mapping$region_name %in% plot_data_dkt$region_name) & !(name_mapping$region_name %in% plot_data_aseg$region_name),] %>% filter(abbreviation %in% phenotypes_for_MC)
+write.csv(regions_notplotted, "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/regions_notplotted.csv")
+```
+#Create folders for saving output
+```{r}
+betas_folder <- paste0(save_path, "full_betas/")
+if (!dir.exists(paste0(save_path, "full_betas/"))) dir.create(betas_folder)
+
+dkt_folder <- paste0(save_path, "dkt_betas/")
+if (!dir.exists(dkt_folder)) dir.create(dkt_folder)
+
+tableOne_folder <- paste0(save_path, "table_one/")
+if (!dir.exists(tableOne_folder)) dir.create(tableOne_folder)
+
+supp_betas_table_folder <- paste0(save_path, "supplementary_betas_tables/")
+if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
+
+
+figure_panels_folder <- paste0(save_path, "figure_panels/")
+if (!dir.exists(figure_panels_folder)) dir.create(figure_panels_folder)
+
+figures_grids_folder <- paste0(save_path, "figures_grids/")
+if (!dir.exists(figures_grids_folder)) dir.create(figures_grids_folder)
+
+revisions_panels_folder <- paste0(save_path, "revisions_panels/")
+if (!dir.exists(revisions_panels_folder)) dir.create(revisions_panels_folder)
+
+extra_panels_folder <- paste0(save_path, "extra_panels/")
+if (!dir.exists(extra_panels_folder)) dir.create(extra_panels_folder)
+
+panel_save <- function(plot, filename, extension, folder){
+  save_name <- paste0(folder, filename, ".", extension)
+  ggsave(save_name, plot = plot, dpi = 300)
+}
+```
+#Data Setup
+Load all saved centiles data tables for t1, t2, and longitudinal
+##T1
+###Define files
+```{r}
+#file paths
+splitOne_folder <- paste0(save_path, "gamlss_fits_t1_BCT_vol_splitONE_2.0/")
+splitTwo_folder <- paste0(save_path,"gamlss_fits_t1_BCT_vol_splitTWO_2.0/")
+sOne_fits_stats_filename <- paste0(splitOne_folder, "gamlss_fits_stats_all.csv")
+sTwo_fits_stats_filename <- paste0(splitTwo_folder, "gamlss_fits_stats_all.csv")
+splitOne_train_filename <- paste0(data_path, "abcd_long_Onetrain2025-09-26.csv")
+splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
+splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
+splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
+
+t1.centiles_filename <- paste0(save_path, "centiles_calculated/t1.volume_centiles_2025-11-15.csv")
+```
+###Load data frames and clean them up
+```{r}
+#rename variables and select t1 scans
+rename_vec <- c(age = "interview_age", sex = "sex_baseline", site = "site_id_l", nonSingleton = "nonSingleton")
+
+t1.sOne_train_df <- read.csv(splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sOne_train_df$sex <- as.factor(t1.sOne_train_df$sex)
+t1.sOne_train_df$site <- as.factor(t1.sOne_train_df$site)
+t1.sOne_train_df$age <- as.numeric(t1.sOne_train_df$age)
+
+t1.sTwo_train_df <- read.csv(splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sTwo_train_df$sex <- as.factor(t1.sTwo_train_df$sex)
+t1.sTwo_train_df$site <- as.factor(t1.sTwo_train_df$site)
+t1.sTwo_train_df$age <- as.numeric(t1.sTwo_train_df$age)
+
+t1.sOne_test_df <- read.csv(splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sOne_test_df$sex <- as.factor(t1.sOne_test_df$sex)
+t1.sOne_test_df$site <- as.factor(t1.sOne_test_df$site)
+t1.sOne_test_df$age <- as.numeric(t1.sOne_test_df$age)
+
+t1.sTwo_test_df <- read.csv(splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sTwo_test_df$sex <- as.factor(t1.sTwo_test_df$sex)
+t1.sTwo_test_df$site <- as.factor(t1.sTwo_test_df$site)
+t1.sTwo_test_df$age <- as.numeric(t1.sTwo_test_df$age)
+```
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+t1.centiles <- read.csv(t1.centiles_filename)  %>% select(-1)
+names(t1.centiles) <- sub("_centiles", ".t1_centiles", names(t1.centiles))
+t1.full_test_df <- rbind(t1.sOne_test_df,t1.sTwo_test_df)
+t1.full_test_df <- merge(t1.centiles, t1.full_test_df, by = "src_subject_id")
+```
+###calculate birth weight percentile
+```{r}
+#convert birthweight into percentiles using the gitHub growthstandards package which use the intergrowth charts
+t1.full_test_df <- t1.full_test_df %>%
+  mutate(birth_weight_kg = birth_weight_oz_sum_adj * 0.0283495) %>%
+  mutate(gestAge_days = gestAge*7+3) %>%
+  mutate(sexLong = recode(sex, "M" = "Male", "F" = "Female"))
+
+t1.full_test_df$bweight_percentile <- igb_wtkg2centile(t1.full_test_df$gestAge_days, t1.full_test_df$birth_weight_kg, sex = t1.full_test_df$sexLong)/100
+
+t1.full_test_df$bw_category <- ifelse(t1.full_test_df$bweight_percentile < 0.10, "SGA", ifelse(t1.full_test_df$bweight_percentile > 0.90, "LGA", "AGA"))
+t1.full_test_df$sexLong <- NULL
+```
+###QC for weight/height measures
+```{r}
+#keep original columns
+t1.full_test_df$anthroweightcalc_og <- t1.full_test_df$anthroweightcalc
+t1.full_test_df$anthroheightcalc_og <- t1.full_test_df$anthroheightcalc
+
+#remove based on <30lbs, too low weight
+#t1weight_mean <- mean(t1.full_test_df$anthroweightcalc, na.rm = TRUE)
+#t1weight_sd <- sd(t1.full_test_df$anthroweightcalc, na.rm = TRUE)
+t1.full_test_df$anthroweightcalc <- ifelse(t1.full_test_df$anthroweightcalc <30 , NA,
+                                           t1.full_test_df$anthroweightcalc)
+
+sum(is.na(t1.full_test_df$anthroweightcalc)) - sum(is.na(t1.full_test_df$anthroweightcalc_og)) #6 removed
+
+#remove under 30 inches, two people at 0 and 4 inches removed, or over 80 inches, two removed
+#t1height_mean <- mean(t1.full_test_df$anthroheightcalc, na.rm = TRUE)
+#t1height_sd <- sd(t1.full_test_df$anthroheightcalc, na.rm = TRUE)
+t1.full_test_df$anthroheightcalc <- ifelse(t1.full_test_df$anthroheightcalc < 30 | t1.full_test_df$anthroheightcalc > 80, NA,
+                                           t1.full_test_df$anthroheightcalc)
+
+sum(is.na(t1.full_test_df$anthroheightcalc)) - sum(is.na(t1.full_test_df$anthroheightcalc_og)) #4 removed
+
+```
+###encode full term as 38 weeks and 39 weeks
+```{r}
+t1.full_test_df$gestAge_38term <- ifelse(t1.full_test_df$gestAge == 40, 38, t1.full_test_df$gestAge)
+t1.full_test_df$gestAge_39term <- ifelse(t1.full_test_df$gestAge == 40, 39, t1.full_test_df$gestAge)
+```
+
+### rename psychopathology subfactors
+```{r}
+t1.full_test_df <- t1.full_test_df %>%
+  rename(psy = Factor1,
+         mania = Factor2,
+         conduct = Factor3,
+         socanx = Factor4,
+         att = Factor5,
+         som = Factor6,
+         overeat = Factor7,
+         ptrauma = Factor8)
+```
+##T2
+###Define files
+```{r}
+#file paths
+t2.splitOne_folder <- paste0(save_path, "gamlss_fits_t2_BCT_vol_splitONE_2.0/")
+t2.splitTwo_folder <- paste0(save_path, "gamlss_fits_t2_BCT_vol_splitTWO_2.0/")
+t2.sOne_fits_stats_filename <- paste0(t2.splitOne_folder, "gamlss_fits_stats_all.csv")
+t2.sTwo_fits_stats_filename <- paste0(t2.splitTwo_folder, "gamlss_fits_stats_all.csv")
+
+splitOne_train_filename <-paste0(data_path, "abcd_long_Onetrain2025-09-26.csv")
+splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
+splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
+splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
+
+t2.centiles_filename <- paste0(save_path, "centiles_calculated/t2.volume_centiles_2025-11-15.csv")
+```
+### Load data frames and clean them up
+```{r}
+#rename variables and select t2 scans
+rename_vec <- c(age = "interview_age", sex = "sex_baseline", site = "site_id_l", nonSingleton = "nonSingleton")
+
+t2.sOne_train_df <- read.csv(splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sOne_train_df$sex <- as.factor(t2.sOne_train_df$sex)
+t2.sOne_train_df$site <- as.factor(t2.sOne_train_df$site)
+t2.sOne_train_df$age <- as.numeric(t2.sOne_train_df$age)
+
+t2.sTwo_train_df <- read.csv(splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sTwo_train_df$sex <- as.factor(t2.sTwo_train_df$sex)
+t2.sTwo_train_df$site <- as.factor(t2.sTwo_train_df$site)
+t2.sTwo_train_df$age <- as.numeric(t2.sTwo_train_df$age)
+
+t2.sOne_test_df <- read.csv(splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sOne_test_df$sex <- as.factor(t2.sOne_test_df$sex)
+t2.sOne_test_df$site <- as.factor(t2.sOne_test_df$site)
+t2.sOne_test_df$age <- as.numeric(t2.sOne_test_df$age)
+
+t2.sTwo_test_df <- read.csv(splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sTwo_test_df$sex <- as.factor(t2.sTwo_test_df$sex)
+t2.sTwo_test_df$site <- as.factor(t2.sTwo_test_df$site)
+t2.sTwo_test_df$age <- as.numeric(t2.sTwo_test_df$age)
+```
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+t2.centiles <- read.csv(t2.centiles_filename)  %>% select(-1)
+names(t2.centiles) <- sub("_centiles", ".t2_centiles", names(t2.centiles))
+t2.full_test_df <- rbind(t2.sOne_test_df,t2.sTwo_test_df)
+t2.full_test_df <- merge(t2.centiles, t2.full_test_df, by = "src_subject_id")
+```
+
+### Add variables for analyses
+```{r}
+# neonatal comp in this df is not calculated correctly, it is NA vector, take it from the t1 df
+t2.full_test_df$neonatal_comp_total <- NULL
+
+t2.full_test_df <- merge(t2.full_test_df, 
+                           t1.full_test_df %>%
+                             select(src_subject_id, gestAge_38term,bweight_percentile, neonatal_comp_total),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id")
+```
+
+###QC for weight/height measures
+```{r}
+#keep original columns
+t2.full_test_df$anthroweightcalc_og <- t2.full_test_df$anthroweightcalc
+t2.full_test_df$anthroheightcalc_og <- t2.full_test_df$anthroheightcalc
+
+#remove based on >400lbs, one very high removed at 3580lbs
+#t2weight_mean <- mean(t2.full_test_df$anthroweightcalc, na.rm = TRUE)
+#t2weight_sd <- sd(t2.full_test_df$anthroweightcalc, na.rm = TRUE)
+t2.full_test_df$anthroweightcalc <- ifelse(t2.full_test_df$anthroweightcalc > 400, NA,
+                                           t2.full_test_df$anthroweightcalc)
+
+sum(is.na(t2.full_test_df$anthroweightcalc)) - sum(is.na(t2.full_test_df$anthroweightcalc_og)) #1 removed
+
+#remove under 30 inches, one person at 6.5 inches, over 80 inches - 3 people at 89+ inches removed
+#t2height_mean <- mean(t2.full_test_df$anthroheightcalc, na.rm = TRUE)
+#t2height_sd <- sd(t2.full_test_df$anthroheightcalc, na.rm = TRUE)
+t2.full_test_df$anthroheightcalc <- ifelse(t2.full_test_df$anthroheightcalc < 30 | t2.full_test_df$anthroheightcalc > 80, NA,
+                                           t2.full_test_df$anthroheightcalc)
+
+sum(is.na(t2.full_test_df$anthroheightcalc)) - sum(is.na(t2.full_test_df$anthroheightcalc_og)) #4 removed
+
+```
+
+### rename psychopathology subfactors
+```{r}
+t2.full_test_df <- t2.full_test_df %>%
+  rename(psy = Factor1,
+         mania = Factor2,
+         conduct = Factor3,
+         socanx = Factor4,
+         att = Factor5,
+         som = Factor6,
+         overeat = Factor7,
+         ptrauma = Factor8)
+```
+
+##LONG
+###Define files
+```{r}
+#file paths
+long.splitOne_folder <- paste0(save_path, "gamlss_fits_long_vol_splitONE_2.0/")
+long.splitTwo_folder <- paste0(save_path, "gamlss_fits_long_vol_splitTWO_2.0/")
+long.sOne_fits_stats_filename <- paste0(long.splitOne_folder, "gamlss_fits_stats_all.csv")
+long.sTwo_fits_stats_filename <- paste0(long.splitTwo_folder, "gamlss_fits_stats_all.csv")
+
+long.splitOne_train_filename <- paste0(data_path, "abcd_wide_Onetrain2025-10-03.csv")
+long.splitTwo_train_filename <- paste0(data_path, "abcd_wide_Twotrain2025-10-03.csv")
+long.splitOne_test_filename <- paste0(data_path, "abcd_wide_Onetest2025-10-03.csv")
+long.splitTwo_test_filename <- paste0(data_path, "abcd_wide_Twotest2025-10-03.csv")
+
+long.centiles_filename <- paste0(save_path, "centiles_calculated/long.volume_centiles_2025-11-15.csv")
+```
+###Load data frames and clean them up
+```{r}
+#rename variables
+rename_vec <- c(age = "interview_age.t2", sex = "sex_baseline", site = "site_id_l.t2")
+
+long.sOne_train_df <- read.csv(long.splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sOne_train_df$sex <- as.factor(long.sOne_train_df$sex)
+long.sOne_train_df$site <- as.factor(long.sOne_train_df$site)
+long.sOne_train_df$age <- as.numeric(long.sOne_train_df$age)
+
+long.sTwo_train_df <- read.csv(long.splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sTwo_train_df$sex <- as.factor(long.sTwo_train_df$sex)
+long.sTwo_train_df$site <- as.factor(long.sTwo_train_df$site)
+long.sTwo_train_df$age <- as.numeric(long.sTwo_train_df$age)
+
+long.sOne_test_df <- read.csv(long.splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sOne_test_df$sex <- as.factor(long.sOne_test_df$sex)
+long.sOne_test_df$site <- as.factor(long.sOne_test_df$site)
+long.sOne_test_df$age <- as.numeric(long.sOne_test_df$age)
+
+long.sTwo_test_df <- read.csv(long.splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sTwo_test_df$sex <- as.factor(long.sTwo_test_df$sex)
+long.sTwo_test_df$site <- as.factor(long.sTwo_test_df$site)
+long.sTwo_test_df$age <- as.numeric(long.sTwo_test_df$age)
+```
+
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+long.centiles <- read.csv(long.centiles_filename)  %>% select(-1)
+names(long.centiles) <- sub(".t2_centiles", ".long_centiles", names(long.centiles))
+long.full_test_df <- rbind(long.sOne_test_df,long.sTwo_test_df)
+long.full_test_df <- merge(long.centiles, long.full_test_df, by = "src_subject_id")
+```
+
+### Add variables for analyses
+```{r}
+long.full_test_df <- merge(long.full_test_df, 
+                           t1.full_test_df %>% rename (General_p.t1 = General_p,
+                                            psy.t1 = psy, mania.t1 = mania, conduct.t1 = conduct,
+                                            socanx.t1 = socanx, att.t1 = att, som.t1 = som,
+                                            overeat.t1 = overeat, ptrauma.t1 = ptrauma,
+                                            anthroheightcalc.t1 = anthroheightcalc, 
+                                            anthroweightcalc.t1 = anthroweightcalc) %>% 
+                             select(src_subject_id, birth_weight_oz_sum_adj, gestAge, gestAge_38term,
+                                                      nonSingleton, bweight_percentile, neonatal_comp_total, 
+                                                      bw_pgs, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PC8, PC9, PC10,
+                                                      General_p.t1, psy.t1, mania.t1, conduct.t1, socanx.t1, att.t1, 
+                                                      som.t1, overeat.t1, ptrauma.t1, anthroweightcalc.t1, anthroheightcalc.t1),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id")
+
+long.full_test_df <- merge(long.full_test_df, 
+                           t2.full_test_df %>% rename (General_p.t2 = General_p,
+                                            psy.t2 = psy, mania.t2 = mania, conduct.t2 = conduct,
+                                            socanx.t2 = socanx, att.t2 = att, som.t2 = som,
+                                            overeat.t2 = overeat, ptrauma.t2 = ptrauma,
+                                            anthroheightcalc.t2 = anthroheightcalc, 
+                                            anthroweightcalc.t2 = anthroweightcalc) %>% 
+                             select(src_subject_id, General_p.t2, psy.t2, mania.t2, conduct.t2, socanx.t2, att.t2, 
+                                                      som.t2, overeat.t2, ptrauma.t2, anthroweightcalc.t2, anthroheightcalc.t2),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id") %>%
+    mutate(General_p_change = General_p.t2 - General_p.t1,
+          psy_change = psy.t2 - psy.t1,  
+          mania_change = mania.t2 - mania.t1,  
+          conduct_change = conduct.t2 - conduct.t1,  
+          socanx_change = socanx.t2 - socanx.t1, 
+          att_change = att.t2 - att.t1,  
+          som_change = som.t2 - som.t1,  
+          overeat_change = overeat.t2 - overeat.t1,  
+          ptrauma_change = ptrauma.t2 - ptrauma.t1)
+```
+
+## Add psychopathology change to t1 and t2 dfs for testing
+```{r}
+t1.full_test_df <- merge(t1.full_test_df, 
+                         long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
+                         by = "src_subject_id", all.x =  TRUE)
+t2.full_test_df <- merge(t2.full_test_df, 
+                         long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
+                         by = "src_subject_id", all.x = TRUE)
+```
+
+
+# Psychopathology Sub-factor analyses
+## T1
+### psy
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$psy))
+psy_zscore <- scale(t1.full_test_df$psy)
+
+#Global Phenotypes
+psy_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(psy_reg_table_global.t1)), name_mapping$abbreviation)]
+
+psy_reg_table_global.t1_sig <- psy_reg_table_global.t1 %>% filter(psy_p < 0.05)
+psy_reg_table_global.t1$psy_p_adj <- p.adjust(psy_reg_table_global.t1$psy_p, method = "BH")
+psy_reg_table_global.t1_sig_MC <- psy_reg_table_global.t1 %>% filter(psy_p_adj < 0.05)
+
+psy_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+psy_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(psy_reg_table_full.t1)), name_mapping$abbreviation)]
+
+psy_reg_table_full.t1_sig <- psy_reg_table_full.t1 %>% filter(psy_p < 0.05)
+psy_reg_table_full.t1$psy_p_adj <- p.adjust(psy_reg_table_full.t1$psy_p, method = "BH")
+psy_reg_table_full.t1_sig_MC <- psy_reg_table_full.t1 %>% filter(psy_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- psy_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "psy_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_psy_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_psy_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "psy_global_t1.csv")
+filename_regional <- paste0(output_folder, "psy_regional_t1.csv")
+write.csv(psy_reg_table_global.t1, filename_global)
+write.csv(psy_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(psy_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(psy_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+psy_reg_table_full.t1_sig_MC[!(psy_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(psy_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.psy_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = psy_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Psy-Factor T1"))
+
+(t1.psy_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = psy_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Psy-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(psy_reg_table_full.t1_sig_MC %>% filter(psy_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(psy_reg_table_full.t1_sig_MC$psy_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.psy_dkt_plot, "psy_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.psy_aseg_plot, "psy_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### mania
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$mania))
+mania_zscore <- scale(t1.full_test_df$mania)
+
+#Global Phenotypes
+mania_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(mania_reg_table_global.t1)), name_mapping$abbreviation)]
+
+mania_reg_table_global.t1_sig <- mania_reg_table_global.t1 %>% filter(mania_p < 0.05)
+mania_reg_table_global.t1$mania_p_adj <- p.adjust(mania_reg_table_global.t1$mania_p, method = "BH")
+mania_reg_table_global.t1_sig_MC <- mania_reg_table_global.t1 %>% filter(mania_p_adj < 0.05)
+
+mania_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+mania_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(mania_reg_table_full.t1)), name_mapping$abbreviation)]
+
+mania_reg_table_full.t1_sig <- mania_reg_table_full.t1 %>% filter(mania_p < 0.05)
+mania_reg_table_full.t1$mania_p_adj <- p.adjust(mania_reg_table_full.t1$mania_p, method = "BH")
+mania_reg_table_full.t1_sig_MC <- mania_reg_table_full.t1 %>% filter(mania_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- mania_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "mania_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_mania_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_mania_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "mania_global_t1.csv")
+filename_regional <- paste0(output_folder, "mania_regional_t1.csv")
+write.csv(mania_reg_table_global.t1, filename_global)
+write.csv(mania_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(mania_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(mania_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+mania_reg_table_full.t1_sig_MC[!(mania_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(mania_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.mania_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = mania_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "mania-Factor T1"))
+
+(t1.mania_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = mania_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "mania-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(mania_reg_table_full.t1_sig_MC %>% filter(mania_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(mania_reg_table_full.t1_sig_MC$mania_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.mania_dkt_plot, "mania_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.mania_aseg_plot, "mania_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### conduct
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$conduct))
+conduct_zscore <- scale(t1.full_test_df$conduct)
+
+#Global Phenotypes
+conduct_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(conduct_reg_table_global.t1)), name_mapping$abbreviation)]
+
+conduct_reg_table_global.t1_sig <- conduct_reg_table_global.t1 %>% filter(conduct_p < 0.05)
+conduct_reg_table_global.t1$conduct_p_adj <- p.adjust(conduct_reg_table_global.t1$conduct_p, method = "BH")
+conduct_reg_table_global.t1_sig_MC <- conduct_reg_table_global.t1 %>% filter(conduct_p_adj < 0.05)
+
+conduct_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+conduct_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(conduct_reg_table_full.t1)), name_mapping$abbreviation)]
+
+conduct_reg_table_full.t1_sig <- conduct_reg_table_full.t1 %>% filter(conduct_p < 0.05)
+conduct_reg_table_full.t1$conduct_p_adj <- p.adjust(conduct_reg_table_full.t1$conduct_p, method = "BH")
+conduct_reg_table_full.t1_sig_MC <- conduct_reg_table_full.t1 %>% filter(conduct_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- conduct_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "conduct_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_conduct_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_conduct_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "conduct_global_t1.csv")
+filename_regional <- paste0(output_folder, "conduct_regional_t1.csv")
+write.csv(conduct_reg_table_global.t1, filename_global)
+write.csv(conduct_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(conduct_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(conduct_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+conduct_reg_table_full.t1_sig_MC[!(conduct_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(conduct_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.conduct_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = conduct_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "conduct-Factor T1"))
+
+(t1.conduct_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = conduct_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "conduct-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(conduct_reg_table_full.t1_sig_MC %>% filter(conduct_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(conduct_reg_table_full.t1_sig_MC$conduct_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.conduct_dkt_plot, "conduct_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.conduct_aseg_plot, "conduct_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### socanx
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$socanx))
+socanx_zscore <- scale(t1.full_test_df$socanx)
+
+#Global Phenotypes
+socanx_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(socanx_reg_table_global.t1)), name_mapping$abbreviation)]
+
+socanx_reg_table_global.t1_sig <- socanx_reg_table_global.t1 %>% filter(socanx_p < 0.05)
+socanx_reg_table_global.t1$socanx_p_adj <- p.adjust(socanx_reg_table_global.t1$socanx_p, method = "BH")
+socanx_reg_table_global.t1_sig_MC <- socanx_reg_table_global.t1 %>% filter(socanx_p_adj < 0.05)
+
+socanx_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+socanx_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(socanx_reg_table_full.t1)), name_mapping$abbreviation)]
+
+socanx_reg_table_full.t1_sig <- socanx_reg_table_full.t1 %>% filter(socanx_p < 0.05)
+socanx_reg_table_full.t1$socanx_p_adj <- p.adjust(socanx_reg_table_full.t1$socanx_p, method = "BH")
+socanx_reg_table_full.t1_sig_MC <- socanx_reg_table_full.t1 %>% filter(socanx_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- socanx_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "socanx_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_socanx_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_socanx_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "socanx_global_t1.csv")
+filename_regional <- paste0(output_folder, "socanx_regional_t1.csv")
+write.csv(socanx_reg_table_global.t1, filename_global)
+write.csv(socanx_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(socanx_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(socanx_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+socanx_reg_table_full.t1_sig_MC[!(socanx_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(socanx_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.socanx_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = socanx_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "socanx-Factor T1"))
+
+(t1.socanx_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = socanx_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "socanx-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(socanx_reg_table_full.t1_sig_MC %>% filter(socanx_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(socanx_reg_table_full.t1_sig_MC$socanx_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.socanx_dkt_plot, "socanx_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.socanx_aseg_plot, "socanx_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### att
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$att))
+att_zscore <- scale(t1.full_test_df$att)
+
+#Global Phenotypes
+att_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(att_reg_table_global.t1)), name_mapping$abbreviation)]
+
+att_reg_table_global.t1_sig <- att_reg_table_global.t1 %>% filter(att_p < 0.05)
+att_reg_table_global.t1$att_p_adj <- p.adjust(att_reg_table_global.t1$att_p, method = "BH")
+att_reg_table_global.t1_sig_MC <- att_reg_table_global.t1 %>% filter(att_p_adj < 0.05)
+
+att_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+att_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(att_reg_table_full.t1)), name_mapping$abbreviation)]
+
+att_reg_table_full.t1_sig <- att_reg_table_full.t1 %>% filter(att_p < 0.05)
+att_reg_table_full.t1$att_p_adj <- p.adjust(att_reg_table_full.t1$att_p, method = "BH")
+att_reg_table_full.t1_sig_MC <- att_reg_table_full.t1 %>% filter(att_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- att_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "att_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_att_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_att_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "att_global_t1.csv")
+filename_regional <- paste0(output_folder, "att_regional_t1.csv")
+write.csv(att_reg_table_global.t1, filename_global)
+write.csv(att_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(att_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(att_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+att_reg_table_full.t1_sig_MC[!(att_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(att_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.att_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = att_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "att-Factor T1"))
+
+(t1.att_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = att_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "att-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(att_reg_table_full.t1_sig_MC %>% filter(att_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(att_reg_table_full.t1_sig_MC$att_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.att_dkt_plot, "att_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.att_aseg_plot, "att_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### som
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$som))
+som_zscore <- scale(t1.full_test_df$som)
+
+#Global Phenotypes
+som_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(som_reg_table_global.t1)), name_mapping$abbreviation)]
+
+som_reg_table_global.t1_sig <- som_reg_table_global.t1 %>% filter(som_p < 0.05)
+som_reg_table_global.t1$som_p_adj <- p.adjust(som_reg_table_global.t1$som_p, method = "BH")
+som_reg_table_global.t1_sig_MC <- som_reg_table_global.t1 %>% filter(som_p_adj < 0.05)
+
+som_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+som_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(som_reg_table_full.t1)), name_mapping$abbreviation)]
+
+som_reg_table_full.t1_sig <- som_reg_table_full.t1 %>% filter(som_p < 0.05)
+som_reg_table_full.t1$som_p_adj <- p.adjust(som_reg_table_full.t1$som_p, method = "BH")
+som_reg_table_full.t1_sig_MC <- som_reg_table_full.t1 %>% filter(som_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- som_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "som_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_som_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_som_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "som_global_t1.csv")
+filename_regional <- paste0(output_folder, "som_regional_t1.csv")
+write.csv(som_reg_table_global.t1, filename_global)
+write.csv(som_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(som_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(som_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+som_reg_table_full.t1_sig_MC[!(som_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(som_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.som_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = som_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "som-Factor T1"))
+
+(t1.som_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = som_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "som-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(som_reg_table_full.t1_sig_MC %>% filter(som_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(som_reg_table_full.t1_sig_MC$som_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.som_dkt_plot, "som_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.som_aseg_plot, "som_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### overeat
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$overeat))
+overeat_zscore <- scale(t1.full_test_df$overeat)
+
+#Global Phenotypes
+overeat_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(overeat_reg_table_global.t1)), name_mapping$abbreviation)]
+
+overeat_reg_table_global.t1_sig <- overeat_reg_table_global.t1 %>% filter(overeat_p < 0.05)
+overeat_reg_table_global.t1$overeat_p_adj <- p.adjust(overeat_reg_table_global.t1$overeat_p, method = "BH")
+overeat_reg_table_global.t1_sig_MC <- overeat_reg_table_global.t1 %>% filter(overeat_p_adj < 0.05)
+
+overeat_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+overeat_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(overeat_reg_table_full.t1)), name_mapping$abbreviation)]
+
+overeat_reg_table_full.t1_sig <- overeat_reg_table_full.t1 %>% filter(overeat_p < 0.05)
+overeat_reg_table_full.t1$overeat_p_adj <- p.adjust(overeat_reg_table_full.t1$overeat_p, method = "BH")
+overeat_reg_table_full.t1_sig_MC <- overeat_reg_table_full.t1 %>% filter(overeat_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- overeat_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "overeat_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_overeat_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_overeat_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "overeat_global_t1.csv")
+filename_regional <- paste0(output_folder, "overeat_regional_t1.csv")
+write.csv(overeat_reg_table_global.t1, filename_global)
+write.csv(overeat_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(overeat_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(overeat_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+overeat_reg_table_full.t1_sig_MC[!(overeat_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(overeat_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.overeat_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = overeat_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "overeat-Factor T1"))
+
+(t1.overeat_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = overeat_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "overeat-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(overeat_reg_table_full.t1_sig_MC %>% filter(overeat_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(overeat_reg_table_full.t1_sig_MC$overeat_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.overeat_dkt_plot, "overeat_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.overeat_aseg_plot, "overeat_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### ptrauma
+#### linear regressions
+```{r}
+sum(!is.na(t1.full_test_df$ptrauma))
+ptrauma_zscore <- scale(t1.full_test_df$ptrauma)
+
+#Global Phenotypes
+ptrauma_reg_table_global.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(global_phenotypes, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_global.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(ptrauma_reg_table_global.t1)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_global.t1_sig <- ptrauma_reg_table_global.t1 %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_global.t1$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_global.t1$ptrauma_p, method = "BH")
+ptrauma_reg_table_global.t1_sig_MC <- ptrauma_reg_table_global.t1 %>% filter(ptrauma_p_adj < 0.05)
+
+ptrauma_reg_table_global.t1_sig_MC
+
+#Regional Phenotypes
+ptrauma_reg_table_full.t1 <- as.data.frame(t(sapply(t1.full_test_df[, which(names(t1.full_test_df) %in% paste0(phenotypes_for_MC, ".t1_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_full.t1$label <- name_mapping$region_name[match(sub(".t1_centiles", "", rownames(ptrauma_reg_table_full.t1)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_full.t1_sig <- ptrauma_reg_table_full.t1 %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_full.t1$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_full.t1$ptrauma_p, method = "BH")
+ptrauma_reg_table_full.t1_sig_MC <- ptrauma_reg_table_full.t1 %>% filter(ptrauma_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- ptrauma_reg_table_full.t1
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "ptrauma_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_ptrauma_all_t1.csv")
+  filename_sig <- paste0(output_folder, "dsk_ptrauma_sig_t1.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "ptrauma_global_t1.csv")
+filename_regional <- paste0(output_folder, "ptrauma_regional_t1.csv")
+write.csv(ptrauma_reg_table_global.t1, filename_global)
+write.csv(ptrauma_reg_table_full.t1, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ptrauma_reg_table_full.t1_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ptrauma_reg_table_full.t1_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+ptrauma_reg_table_full.t1_sig_MC[!(ptrauma_reg_table_full.t1_sig_MC$label %in% plot_data_dkt$label) & !(ptrauma_reg_table_full.t1_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t1.ptrauma_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = ptrauma_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "ptrauma-Factor T1"))
+
+(t1.ptrauma_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ptrauma_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "ptrauma-Factor T1"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ptrauma_reg_table_full.t1_sig_MC %>% filter(ptrauma_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ptrauma_reg_table_full.t1_sig_MC$ptrauma_beta)))
+
+if(save_figures == TRUE){
+panel_save(t1.ptrauma_dkt_plot, "ptrauma_t1_dkt", "pdf", figure_panels_folder)
+panel_save(t1.ptrauma_aseg_plot, "ptrauma_t1_aseg", "pdf", figure_panels_folder)
+}
+```
+
+
+
+## T2
+### psy
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$psy))
+psy_zscore <- scale(t2.full_test_df$psy)
+
+#Global Phenotypes
+psy_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(psy_reg_table_global.t2)), name_mapping$abbreviation)]
+
+psy_reg_table_global.t2_sig <- psy_reg_table_global.t2 %>% filter(psy_p < 0.05)
+psy_reg_table_global.t2$psy_p_adj <- p.adjust(psy_reg_table_global.t2$psy_p, method = "BH")
+psy_reg_table_global.t2_sig_MC <- psy_reg_table_global.t2 %>% filter(psy_p_adj < 0.05)
+
+psy_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+psy_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(psy_reg_table_full.t2)), name_mapping$abbreviation)]
+
+psy_reg_table_full.t2_sig <- psy_reg_table_full.t2 %>% filter(psy_p < 0.05)
+psy_reg_table_full.t2$psy_p_adj <- p.adjust(psy_reg_table_full.t2$psy_p, method = "BH")
+psy_reg_table_full.t2_sig_MC <- psy_reg_table_full.t2 %>% filter(psy_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- psy_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "psy_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_psy_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_psy_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "psy_global_t2.csv")
+filename_regional <- paste0(output_folder, "psy_regional_t2.csv")
+write.csv(psy_reg_table_global.t2, filename_global)
+write.csv(psy_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(psy_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(psy_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+psy_reg_table_full.t2_sig_MC[!(psy_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(psy_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.psy_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = psy_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Psy-Factor t2"))
+
+(t2.psy_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = psy_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "Psy-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(psy_reg_table_full.t2_sig_MC %>% filter(psy_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(psy_reg_table_full.t2_sig_MC$psy_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.psy_dkt_plot, "psy_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.psy_aseg_plot, "psy_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### mania
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$mania))
+mania_zscore <- scale(t2.full_test_df$mania)
+
+#Global Phenotypes
+mania_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(mania_reg_table_global.t2)), name_mapping$abbreviation)]
+
+mania_reg_table_global.t2_sig <- mania_reg_table_global.t2 %>% filter(mania_p < 0.05)
+mania_reg_table_global.t2$mania_p_adj <- p.adjust(mania_reg_table_global.t2$mania_p, method = "BH")
+mania_reg_table_global.t2_sig_MC <- mania_reg_table_global.t2 %>% filter(mania_p_adj < 0.05)
+
+mania_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+mania_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(mania_reg_table_full.t2)), name_mapping$abbreviation)]
+
+mania_reg_table_full.t2_sig <- mania_reg_table_full.t2 %>% filter(mania_p < 0.05)
+mania_reg_table_full.t2$mania_p_adj <- p.adjust(mania_reg_table_full.t2$mania_p, method = "BH")
+mania_reg_table_full.t2_sig_MC <- mania_reg_table_full.t2 %>% filter(mania_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- mania_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "mania_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_mania_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_mania_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "mania_global_t2.csv")
+filename_regional <- paste0(output_folder, "mania_regional_t2.csv")
+write.csv(mania_reg_table_global.t2, filename_global)
+write.csv(mania_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(mania_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(mania_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+mania_reg_table_full.t2_sig_MC[!(mania_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(mania_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.mania_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = mania_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "mania-Factor t2"))
+
+(t2.mania_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = mania_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "mania-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(mania_reg_table_full.t2_sig_MC %>% filter(mania_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(mania_reg_table_full.t2_sig_MC$mania_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.mania_dkt_plot, "mania_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.mania_aseg_plot, "mania_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### conduct
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$conduct))
+conduct_zscore <- scale(t2.full_test_df$conduct)
+
+#Global Phenotypes
+conduct_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(conduct_reg_table_global.t2)), name_mapping$abbreviation)]
+
+conduct_reg_table_global.t2_sig <- conduct_reg_table_global.t2 %>% filter(conduct_p < 0.05)
+conduct_reg_table_global.t2$conduct_p_adj <- p.adjust(conduct_reg_table_global.t2$conduct_p, method = "BH")
+conduct_reg_table_global.t2_sig_MC <- conduct_reg_table_global.t2 %>% filter(conduct_p_adj < 0.05)
+
+conduct_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+conduct_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(conduct_reg_table_full.t2)), name_mapping$abbreviation)]
+
+conduct_reg_table_full.t2_sig <- conduct_reg_table_full.t2 %>% filter(conduct_p < 0.05)
+conduct_reg_table_full.t2$conduct_p_adj <- p.adjust(conduct_reg_table_full.t2$conduct_p, method = "BH")
+conduct_reg_table_full.t2_sig_MC <- conduct_reg_table_full.t2 %>% filter(conduct_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- conduct_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "conduct_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_conduct_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_conduct_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "conduct_global_t2.csv")
+filename_regional <- paste0(output_folder, "conduct_regional_t2.csv")
+write.csv(conduct_reg_table_global.t2, filename_global)
+write.csv(conduct_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(conduct_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(conduct_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+conduct_reg_table_full.t2_sig_MC[!(conduct_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(conduct_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.conduct_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = conduct_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "conduct-Factor t2"))
+
+(t2.conduct_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = conduct_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "conduct-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(conduct_reg_table_full.t2_sig_MC %>% filter(conduct_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(conduct_reg_table_full.t2_sig_MC$conduct_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.conduct_dkt_plot, "conduct_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.conduct_aseg_plot, "conduct_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### socanx
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$socanx))
+socanx_zscore <- scale(t2.full_test_df$socanx)
+
+#Global Phenotypes
+socanx_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(socanx_reg_table_global.t2)), name_mapping$abbreviation)]
+
+socanx_reg_table_global.t2_sig <- socanx_reg_table_global.t2 %>% filter(socanx_p < 0.05)
+socanx_reg_table_global.t2$socanx_p_adj <- p.adjust(socanx_reg_table_global.t2$socanx_p, method = "BH")
+socanx_reg_table_global.t2_sig_MC <- socanx_reg_table_global.t2 %>% filter(socanx_p_adj < 0.05)
+
+socanx_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+socanx_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(socanx_reg_table_full.t2)), name_mapping$abbreviation)]
+
+socanx_reg_table_full.t2_sig <- socanx_reg_table_full.t2 %>% filter(socanx_p < 0.05)
+socanx_reg_table_full.t2$socanx_p_adj <- p.adjust(socanx_reg_table_full.t2$socanx_p, method = "BH")
+socanx_reg_table_full.t2_sig_MC <- socanx_reg_table_full.t2 %>% filter(socanx_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- socanx_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "socanx_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_socanx_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_socanx_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "socanx_global_t2.csv")
+filename_regional <- paste0(output_folder, "socanx_regional_t2.csv")
+write.csv(socanx_reg_table_global.t2, filename_global)
+write.csv(socanx_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(socanx_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(socanx_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+socanx_reg_table_full.t2_sig_MC[!(socanx_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(socanx_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.socanx_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = socanx_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "socanx-Factor t2"))
+
+(t2.socanx_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = socanx_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "socanx-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(socanx_reg_table_full.t2_sig_MC %>% filter(socanx_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(socanx_reg_table_full.t2_sig_MC$socanx_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.socanx_dkt_plot, "socanx_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.socanx_aseg_plot, "socanx_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### att
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$att))
+att_zscore <- scale(t2.full_test_df$att)
+
+#Global Phenotypes
+att_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(att_reg_table_global.t2)), name_mapping$abbreviation)]
+
+att_reg_table_global.t2_sig <- att_reg_table_global.t2 %>% filter(att_p < 0.05)
+att_reg_table_global.t2$att_p_adj <- p.adjust(att_reg_table_global.t2$att_p, method = "BH")
+att_reg_table_global.t2_sig_MC <- att_reg_table_global.t2 %>% filter(att_p_adj < 0.05)
+
+att_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+att_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(att_reg_table_full.t2)), name_mapping$abbreviation)]
+
+att_reg_table_full.t2_sig <- att_reg_table_full.t2 %>% filter(att_p < 0.05)
+att_reg_table_full.t2$att_p_adj <- p.adjust(att_reg_table_full.t2$att_p, method = "BH")
+att_reg_table_full.t2_sig_MC <- att_reg_table_full.t2 %>% filter(att_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- att_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "att_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_att_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_att_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "att_global_t2.csv")
+filename_regional <- paste0(output_folder, "att_regional_t2.csv")
+write.csv(att_reg_table_global.t2, filename_global)
+write.csv(att_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(att_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(att_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+att_reg_table_full.t2_sig_MC[!(att_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(att_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.att_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = att_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "att-Factor t2"))
+
+(t2.att_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = att_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "att-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(att_reg_table_full.t2_sig_MC %>% filter(att_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(att_reg_table_full.t2_sig_MC$att_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.att_dkt_plot, "att_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.att_aseg_plot, "att_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### som
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$som))
+som_zscore <- scale(t2.full_test_df$som)
+
+#Global Phenotypes
+som_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(som_reg_table_global.t2)), name_mapping$abbreviation)]
+
+som_reg_table_global.t2_sig <- som_reg_table_global.t2 %>% filter(som_p < 0.05)
+som_reg_table_global.t2$som_p_adj <- p.adjust(som_reg_table_global.t2$som_p, method = "BH")
+som_reg_table_global.t2_sig_MC <- som_reg_table_global.t2 %>% filter(som_p_adj < 0.05)
+
+som_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+som_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(som_reg_table_full.t2)), name_mapping$abbreviation)]
+
+som_reg_table_full.t2_sig <- som_reg_table_full.t2 %>% filter(som_p < 0.05)
+som_reg_table_full.t2$som_p_adj <- p.adjust(som_reg_table_full.t2$som_p, method = "BH")
+som_reg_table_full.t2_sig_MC <- som_reg_table_full.t2 %>% filter(som_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- som_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "som_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_som_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_som_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "som_global_t2.csv")
+filename_regional <- paste0(output_folder, "som_regional_t2.csv")
+write.csv(som_reg_table_global.t2, filename_global)
+write.csv(som_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(som_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(som_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+som_reg_table_full.t2_sig_MC[!(som_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(som_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.som_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = som_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "som-Factor t2"))
+
+(t2.som_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = som_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "som-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(som_reg_table_full.t2_sig_MC %>% filter(som_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(som_reg_table_full.t2_sig_MC$som_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.som_dkt_plot, "som_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.som_aseg_plot, "som_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### overeat
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$overeat))
+overeat_zscore <- scale(t2.full_test_df$overeat)
+
+#Global Phenotypes
+overeat_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(overeat_reg_table_global.t2)), name_mapping$abbreviation)]
+
+overeat_reg_table_global.t2_sig <- overeat_reg_table_global.t2 %>% filter(overeat_p < 0.05)
+overeat_reg_table_global.t2$overeat_p_adj <- p.adjust(overeat_reg_table_global.t2$overeat_p, method = "BH")
+overeat_reg_table_global.t2_sig_MC <- overeat_reg_table_global.t2 %>% filter(overeat_p_adj < 0.05)
+
+overeat_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+overeat_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(overeat_reg_table_full.t2)), name_mapping$abbreviation)]
+
+overeat_reg_table_full.t2_sig <- overeat_reg_table_full.t2 %>% filter(overeat_p < 0.05)
+overeat_reg_table_full.t2$overeat_p_adj <- p.adjust(overeat_reg_table_full.t2$overeat_p, method = "BH")
+overeat_reg_table_full.t2_sig_MC <- overeat_reg_table_full.t2 %>% filter(overeat_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- overeat_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "overeat_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_overeat_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_overeat_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "overeat_global_t2.csv")
+filename_regional <- paste0(output_folder, "overeat_regional_t2.csv")
+write.csv(overeat_reg_table_global.t2, filename_global)
+write.csv(overeat_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(overeat_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(overeat_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+overeat_reg_table_full.t2_sig_MC[!(overeat_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(overeat_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.overeat_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = overeat_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "overeat-Factor t2"))
+
+(t2.overeat_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = overeat_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "overeat-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(overeat_reg_table_full.t2_sig_MC %>% filter(overeat_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(overeat_reg_table_full.t2_sig_MC$overeat_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.overeat_dkt_plot, "overeat_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.overeat_aseg_plot, "overeat_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### ptrauma
+#### linear regressions
+```{r}
+sum(!is.na(t2.full_test_df$ptrauma))
+ptrauma_zscore <- scale(t2.full_test_df$ptrauma)
+
+#Global Phenotypes
+ptrauma_reg_table_global.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(global_phenotypes, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_global.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(ptrauma_reg_table_global.t2)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_global.t2_sig <- ptrauma_reg_table_global.t2 %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_global.t2$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_global.t2$ptrauma_p, method = "BH")
+ptrauma_reg_table_global.t2_sig_MC <- ptrauma_reg_table_global.t2 %>% filter(ptrauma_p_adj < 0.05)
+
+ptrauma_reg_table_global.t2_sig_MC
+
+#Regional Phenotypes
+ptrauma_reg_table_full.t2 <- as.data.frame(t(sapply(t2.full_test_df[, which(names(t2.full_test_df) %in% paste0(phenotypes_for_MC, ".t2_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_full.t2$label <- name_mapping$region_name[match(sub(".t2_centiles", "", rownames(ptrauma_reg_table_full.t2)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_full.t2_sig <- ptrauma_reg_table_full.t2 %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_full.t2$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_full.t2$ptrauma_p, method = "BH")
+ptrauma_reg_table_full.t2_sig_MC <- ptrauma_reg_table_full.t2 %>% filter(ptrauma_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- ptrauma_reg_table_full.t2
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                         ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "ptrauma_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_ptrauma_all_t2.csv")
+  filename_sig <- paste0(output_folder, "dsk_ptrauma_sig_t2.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+output_folder <-betas_folder
+filename_global <- paste0(output_folder, "ptrauma_global_t2.csv")
+filename_regional <- paste0(output_folder, "ptrauma_regional_t2.csv")
+write.csv(ptrauma_reg_table_global.t2, filename_global)
+write.csv(ptrauma_reg_table_full.t2, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ptrauma_reg_table_full.t2_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ptrauma_reg_table_full.t2_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+ptrauma_reg_table_full.t2_sig_MC[!(ptrauma_reg_table_full.t2_sig_MC$label %in% plot_data_dkt$label) & !(ptrauma_reg_table_full.t2_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(t2.ptrauma_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = ptrauma_beta)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "ptrauma-Factor t2"))
+
+(t2.ptrauma_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = ptrauma_beta)) +
+ scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                       limits = c(-0.23, 0.23)) +
+  theme_void() +
+  labs(title = "ptrauma-Factor t2"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ptrauma_reg_table_full.t2_sig_MC %>% filter(ptrauma_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ptrauma_reg_table_full.t2_sig_MC$ptrauma_beta)))
+
+if(save_figures == TRUE){
+panel_save(t2.ptrauma_dkt_plot, "ptrauma_t2_dkt", "pdf", figure_panels_folder)
+panel_save(t2.ptrauma_aseg_plot, "ptrauma_t2_aseg", "pdf", figure_panels_folder)
+}
+```
+
+## LONG
+### psy
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$psy_change))
+psy_zscore <- scale(long.full_test_df$psy_change)
+psy_base_zscore <- scale(long.full_test_df$psy.t1)
+
+#Global Phenotypes
+psy_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore + psy_base_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(psy_reg_table_global.long)), name_mapping$abbreviation)]
+
+psy_reg_table_global.long_sig <- psy_reg_table_global.long %>% filter(psy_p < 0.05)
+psy_reg_table_global.long$psy_p_adj <- p.adjust(psy_reg_table_global.long$psy_p, method = "BH")
+psy_reg_table_global.long_sig_MC <- psy_reg_table_global.long %>% filter(psy_p_adj < 0.05)
+
+psy_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+psy_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ psy_zscore + psy_base_zscore)
+  summary <- summary(lm)
+  
+  c(psy_beta = summary$coefficients[2,1], psy_p = summary$coefficients[2,4], psy_se = summary$coefficients[2,2])
+})))
+
+psy_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(psy_reg_table_full.long)), name_mapping$abbreviation)]
+
+psy_reg_table_full.long_sig <- psy_reg_table_full.long %>% filter(psy_p < 0.05)
+psy_reg_table_full.long$psy_p_adj <- p.adjust(psy_reg_table_full.long$psy_p, method = "BH")
+psy_reg_table_full.long_sig_MC <- psy_reg_table_full.long %>% filter(psy_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- psy_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "psy_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_psy_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_psy_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "psy_global_long.csv")
+  filename_regional <- paste0(output_folder, "psy_regional_long.csv")
+  write.csv(psy_reg_table_global.long, filename_global)
+  write.csv(psy_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(psy_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(psy_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+psy_reg_table_full.long_sig_MC[!(psy_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(psy_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.psy_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = psy_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "Psy-Factor long"))
+
+(long.psy_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = psy_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "Psy-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(psy_reg_table_full.long_sig_MC %>% filter(psy_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(psy_reg_table_full.long_sig_MC$psy_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.psy_dkt_plot, "psy_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.psy_aseg_plot, "psy_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### mania
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$mania_change))
+mania_zscore <- scale(long.full_test_df$mania_change)
+mania_base_zscore <- scale(long.full_test_df$mania.t1)
+
+#Global Phenotypes
+mania_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore + mania_base_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(mania_reg_table_global.long)), name_mapping$abbreviation)]
+
+mania_reg_table_global.long_sig <- mania_reg_table_global.long %>% filter(mania_p < 0.05)
+mania_reg_table_global.long$mania_p_adj <- p.adjust(mania_reg_table_global.long$mania_p, method = "BH")
+mania_reg_table_global.long_sig_MC <- mania_reg_table_global.long %>% filter(mania_p_adj < 0.05)
+
+mania_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+mania_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ mania_zscore + mania_base_zscore)
+  summary <- summary(lm)
+  
+  c(mania_beta = summary$coefficients[2,1], mania_p = summary$coefficients[2,4], mania_se = summary$coefficients[2,2])
+})))
+
+mania_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(mania_reg_table_full.long)), name_mapping$abbreviation)]
+
+mania_reg_table_full.long_sig <- mania_reg_table_full.long %>% filter(mania_p < 0.05)
+mania_reg_table_full.long$mania_p_adj <- p.adjust(mania_reg_table_full.long$mania_p, method = "BH")
+mania_reg_table_full.long_sig_MC <- mania_reg_table_full.long %>% filter(mania_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- mania_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "mania_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_mania_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_mania_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "mania_global_long.csv")
+  filename_regional <- paste0(output_folder, "mania_regional_long.csv")
+  write.csv(mania_reg_table_global.long, filename_global)
+  write.csv(mania_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(mania_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(mania_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+mania_reg_table_full.long_sig_MC[!(mania_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(mania_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.mania_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = mania_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "mania-Factor long"))
+
+(long.mania_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = mania_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "mania-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(mania_reg_table_full.long_sig_MC %>% filter(mania_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(mania_reg_table_full.long_sig_MC$mania_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.mania_dkt_plot, "mania_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.mania_aseg_plot, "mania_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### conduct
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$conduct_change))
+conduct_zscore <- scale(long.full_test_df$conduct_change)
+conduct_base_zscore <- scale(long.full_test_df$conduct.t1)
+
+#Global Phenotypes
+conduct_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore + conduct_base_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(conduct_reg_table_global.long)), name_mapping$abbreviation)]
+
+conduct_reg_table_global.long_sig <- conduct_reg_table_global.long %>% filter(conduct_p < 0.05)
+conduct_reg_table_global.long$conduct_p_adj <- p.adjust(conduct_reg_table_global.long$conduct_p, method = "BH")
+conduct_reg_table_global.long_sig_MC <- conduct_reg_table_global.long %>% filter(conduct_p_adj < 0.05)
+
+conduct_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+conduct_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ conduct_zscore + conduct_base_zscore)
+  summary <- summary(lm)
+  
+  c(conduct_beta = summary$coefficients[2,1], conduct_p = summary$coefficients[2,4], conduct_se = summary$coefficients[2,2])
+})))
+
+conduct_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(conduct_reg_table_full.long)), name_mapping$abbreviation)]
+
+conduct_reg_table_full.long_sig <- conduct_reg_table_full.long %>% filter(conduct_p < 0.05)
+conduct_reg_table_full.long$conduct_p_adj <- p.adjust(conduct_reg_table_full.long$conduct_p, method = "BH")
+conduct_reg_table_full.long_sig_MC <- conduct_reg_table_full.long %>% filter(conduct_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- conduct_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "conduct_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_conduct_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_conduct_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "conduct_global_long.csv")
+  filename_regional <- paste0(output_folder, "conduct_regional_long.csv")
+  write.csv(conduct_reg_table_global.long, filename_global)
+  write.csv(conduct_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(conduct_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(conduct_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+conduct_reg_table_full.long_sig_MC[!(conduct_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(conduct_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.conduct_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = conduct_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "conduct-Factor long"))
+
+(long.conduct_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = conduct_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "conduct-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(conduct_reg_table_full.long_sig_MC %>% filter(conduct_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(conduct_reg_table_full.long_sig_MC$conduct_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.conduct_dkt_plot, "conduct_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.conduct_aseg_plot, "conduct_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### socanx
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$socanx_change))
+socanx_zscore <- scale(long.full_test_df$socanx_change)
+socanx_base_zscore <- scale(long.full_test_df$socanx.t1)
+
+#Global Phenotypes
+socanx_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore + socanx_base_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(socanx_reg_table_global.long)), name_mapping$abbreviation)]
+
+socanx_reg_table_global.long_sig <- socanx_reg_table_global.long %>% filter(socanx_p < 0.05)
+socanx_reg_table_global.long$socanx_p_adj <- p.adjust(socanx_reg_table_global.long$socanx_p, method = "BH")
+socanx_reg_table_global.long_sig_MC <- socanx_reg_table_global.long %>% filter(socanx_p_adj < 0.05)
+
+socanx_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+socanx_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ socanx_zscore + socanx_base_zscore)
+  summary <- summary(lm)
+  
+  c(socanx_beta = summary$coefficients[2,1], socanx_p = summary$coefficients[2,4], socanx_se = summary$coefficients[2,2])
+})))
+
+socanx_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(socanx_reg_table_full.long)), name_mapping$abbreviation)]
+
+socanx_reg_table_full.long_sig <- socanx_reg_table_full.long %>% filter(socanx_p < 0.05)
+socanx_reg_table_full.long$socanx_p_adj <- p.adjust(socanx_reg_table_full.long$socanx_p, method = "BH")
+socanx_reg_table_full.long_sig_MC <- socanx_reg_table_full.long %>% filter(socanx_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- socanx_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "socanx_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_socanx_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_socanx_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "socanx_global_long.csv")
+  filename_regional <- paste0(output_folder, "socanx_regional_long.csv")
+  write.csv(socanx_reg_table_global.long, filename_global)
+  write.csv(socanx_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(socanx_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(socanx_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+socanx_reg_table_full.long_sig_MC[!(socanx_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(socanx_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.socanx_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = socanx_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "socanx-Factor long"))
+
+(long.socanx_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = socanx_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "socanx-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(socanx_reg_table_full.long_sig_MC %>% filter(socanx_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(socanx_reg_table_full.long_sig_MC$socanx_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.socanx_dkt_plot, "socanx_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.socanx_aseg_plot, "socanx_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+
+### att
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$att_change))
+att_zscore <- scale(long.full_test_df$att_change)
+att_base_zscore <- scale(long.full_test_df$att.t1)
+
+#Global Phenotypes
+att_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore + att_base_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(att_reg_table_global.long)), name_mapping$abbreviation)]
+
+att_reg_table_global.long_sig <- att_reg_table_global.long %>% filter(att_p < 0.05)
+att_reg_table_global.long$att_p_adj <- p.adjust(att_reg_table_global.long$att_p, method = "BH")
+att_reg_table_global.long_sig_MC <- att_reg_table_global.long %>% filter(att_p_adj < 0.05)
+
+att_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+att_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ att_zscore + att_base_zscore)
+  summary <- summary(lm)
+  
+  c(att_beta = summary$coefficients[2,1], att_p = summary$coefficients[2,4], att_se = summary$coefficients[2,2])
+})))
+
+att_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(att_reg_table_full.long)), name_mapping$abbreviation)]
+
+att_reg_table_full.long_sig <- att_reg_table_full.long %>% filter(att_p < 0.05)
+att_reg_table_full.long$att_p_adj <- p.adjust(att_reg_table_full.long$att_p, method = "BH")
+att_reg_table_full.long_sig_MC <- att_reg_table_full.long %>% filter(att_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- att_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "att_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_att_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_att_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "att_global_long.csv")
+  filename_regional <- paste0(output_folder, "att_regional_long.csv")
+  write.csv(att_reg_table_global.long, filename_global)
+  write.csv(att_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(att_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(att_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+att_reg_table_full.long_sig_MC[!(att_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(att_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.att_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = att_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "att-Factor long"))
+
+(long.att_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = att_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "att-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(att_reg_table_full.long_sig_MC %>% filter(att_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(att_reg_table_full.long_sig_MC$att_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.att_dkt_plot, "att_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.att_aseg_plot, "att_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### som
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$som_change))
+som_zscore <- scale(long.full_test_df$som_change)
+som_base_zscore <- scale(long.full_test_df$som.t1)
+
+#Global Phenotypes
+som_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore + som_base_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(som_reg_table_global.long)), name_mapping$abbreviation)]
+
+som_reg_table_global.long_sig <- som_reg_table_global.long %>% filter(som_p < 0.05)
+som_reg_table_global.long$som_p_adj <- p.adjust(som_reg_table_global.long$som_p, method = "BH")
+som_reg_table_global.long_sig_MC <- som_reg_table_global.long %>% filter(som_p_adj < 0.05)
+
+som_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+som_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ som_zscore + som_base_zscore)
+  summary <- summary(lm)
+  
+  c(som_beta = summary$coefficients[2,1], som_p = summary$coefficients[2,4], som_se = summary$coefficients[2,2])
+})))
+
+som_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(som_reg_table_full.long)), name_mapping$abbreviation)]
+
+som_reg_table_full.long_sig <- som_reg_table_full.long %>% filter(som_p < 0.05)
+som_reg_table_full.long$som_p_adj <- p.adjust(som_reg_table_full.long$som_p, method = "BH")
+som_reg_table_full.long_sig_MC <- som_reg_table_full.long %>% filter(som_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- som_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "som_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_som_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_som_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "som_global_long.csv")
+  filename_regional <- paste0(output_folder, "som_regional_long.csv")
+  write.csv(som_reg_table_global.long, filename_global)
+  write.csv(som_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(som_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(som_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+som_reg_table_full.long_sig_MC[!(som_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(som_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.som_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = som_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "som-Factor long"))
+
+(long.som_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = som_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "som-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(som_reg_table_full.long_sig_MC %>% filter(som_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(som_reg_table_full.long_sig_MC$som_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.som_dkt_plot, "som_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.som_aseg_plot, "som_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### overeat
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$overeat_change))
+overeat_zscore <- scale(long.full_test_df$overeat_change)
+overeat_base_zscore <- scale(long.full_test_df$overeat.t1)
+
+#Global Phenotypes
+overeat_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore + overeat_base_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(overeat_reg_table_global.long)), name_mapping$abbreviation)]
+
+overeat_reg_table_global.long_sig <- overeat_reg_table_global.long %>% filter(overeat_p < 0.05)
+overeat_reg_table_global.long$overeat_p_adj <- p.adjust(overeat_reg_table_global.long$overeat_p, method = "BH")
+overeat_reg_table_global.long_sig_MC <- overeat_reg_table_global.long %>% filter(overeat_p_adj < 0.05)
+
+overeat_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+overeat_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ overeat_zscore + overeat_base_zscore)
+  summary <- summary(lm)
+  
+  c(overeat_beta = summary$coefficients[2,1], overeat_p = summary$coefficients[2,4], overeat_se = summary$coefficients[2,2])
+})))
+
+overeat_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(overeat_reg_table_full.long)), name_mapping$abbreviation)]
+
+overeat_reg_table_full.long_sig <- overeat_reg_table_full.long %>% filter(overeat_p < 0.05)
+overeat_reg_table_full.long$overeat_p_adj <- p.adjust(overeat_reg_table_full.long$overeat_p, method = "BH")
+overeat_reg_table_full.long_sig_MC <- overeat_reg_table_full.long %>% filter(overeat_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- overeat_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "overeat_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_overeat_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_overeat_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "overeat_global_long.csv")
+  filename_regional <- paste0(output_folder, "overeat_regional_long.csv")
+  write.csv(overeat_reg_table_global.long, filename_global)
+  write.csv(overeat_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(overeat_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(overeat_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+overeat_reg_table_full.long_sig_MC[!(overeat_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(overeat_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.overeat_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = overeat_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "overeat-Factor long"))
+
+(long.overeat_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = overeat_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "overeat-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(overeat_reg_table_full.long_sig_MC %>% filter(overeat_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(overeat_reg_table_full.long_sig_MC$overeat_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.overeat_dkt_plot, "overeat_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.overeat_aseg_plot, "overeat_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+### ptrauma
+#### linear regressions
+```{r}
+sum(!is.na(long.full_test_df$ptrauma_change))
+ptrauma_zscore <- scale(long.full_test_df$ptrauma_change)
+ptrauma_base_zscore <- scale(long.full_test_df$ptrauma.t1)
+
+#Global Phenotypes
+ptrauma_reg_table_global.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(global_phenotypes, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore + ptrauma_base_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_global.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(ptrauma_reg_table_global.long)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_global.long_sig <- ptrauma_reg_table_global.long %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_global.long$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_global.long$ptrauma_p, method = "BH")
+ptrauma_reg_table_global.long_sig_MC <- ptrauma_reg_table_global.long %>% filter(ptrauma_p_adj < 0.05)
+
+ptrauma_reg_table_global.long_sig_MC
+
+#Regional Phenotypes
+ptrauma_reg_table_full.long <- as.data.frame(t(sapply(long.full_test_df[, which(names(long.full_test_df) %in% paste0(phenotypes_for_MC, ".long_centiles"))], function(x) {
+  x_zscore <- qnorm(x)
+  lm <- lm(x_zscore ~ ptrauma_zscore + ptrauma_base_zscore)
+  summary <- summary(lm)
+  
+  c(ptrauma_beta = summary$coefficients[2,1], ptrauma_p = summary$coefficients[2,4], ptrauma_se = summary$coefficients[2,2])
+})))
+
+ptrauma_reg_table_full.long$label <- name_mapping$region_name[match(sub(".long_centiles", "", rownames(ptrauma_reg_table_full.long)), name_mapping$abbreviation)]
+
+ptrauma_reg_table_full.long_sig <- ptrauma_reg_table_full.long %>% filter(ptrauma_p < 0.05)
+ptrauma_reg_table_full.long$ptrauma_p_adj <- p.adjust(ptrauma_reg_table_full.long$ptrauma_p, method = "BH")
+ptrauma_reg_table_full.long_sig_MC <- ptrauma_reg_table_full.long %>% filter(ptrauma_p_adj < 0.05)
+
+#save tables of betas
+if(save_tables == TRUE){
+  output_folder <-dkt_folder
+  save_table_full <- ptrauma_reg_table_full.long
+  save_table_full$hemisphere <- ifelse(grepl("lh", save_table_full$label), "L", 
+                                       ifelse(grepl("rh", save_table_full$label), "R", NA))
+  save_table_full$label <- sub("^rh_|lh_", "", save_table_full$label)
+  save_table_sig <- save_table_full
+  save_table_sig[which(save_table_sig$save_p_adj>0.05), "ptrauma_beta"] <- 0
+  filename_all <- paste0(output_folder, "dsk_ptrauma_all_long.csv")
+  filename_sig <- paste0(output_folder, "dsk_ptrauma_sig_long.csv")
+  write.csv(save_table_full, filename_all)
+  write.csv(save_table_sig, filename_sig)
+}
+if(save_tables == TRUE){
+  output_folder <-betas_folder
+  filename_global <- paste0(output_folder, "ptrauma_global_long.csv")
+  filename_regional <- paste0(output_folder, "ptrauma_regional_long.csv")
+  write.csv(ptrauma_reg_table_global.long, filename_global)
+  write.csv(ptrauma_reg_table_full.long, filename_regional)
+}
+```
+#### visualize on surface
+```{r}
+#merge with atlas data
+plot_data_dkt <- merge(ptrauma_reg_table_full.long_sig_MC, ggseg::dk, by = "label")
+plot_data_aseg <- merge(ptrauma_reg_table_full.long_sig_MC, ggseg::aseg, by = "label")
+
+#Regions not matched in atlases
+ptrauma_reg_table_full.long_sig_MC[!(ptrauma_reg_table_full.long_sig_MC$label %in% plot_data_dkt$label) & !(ptrauma_reg_table_full.long_sig_MC$label %in% plot_data_aseg$label),]
+
+# Plot using ggseg
+(long.ptrauma_dkt_plot <- ggplot(plot_data_dkt) +
+    geom_brain(atlas = dk, 
+               position = position_brain(hemi ~ side),
+               aes(fill = ptrauma_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "ptrauma-Factor long"))
+
+(long.ptrauma_aseg_plot <- ggplot(plot_data_aseg) +
+    geom_brain(atlas = aseg,
+               aes(fill = ptrauma_beta)) +
+    scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",
+                         limits = c(-0.23, 0.23)) +
+    theme_void() +
+    labs(title = "ptrauma-Factor long"))
+
+print(paste0("Number of significant IDPs after FDR correction: ", dim(ptrauma_reg_table_full.long_sig_MC %>% filter(ptrauma_p_adj < 0.05))[1]))
+print(paste0("Beta range of significant IDPs: ", range(ptrauma_reg_table_full.long_sig_MC$ptrauma_beta)))
+
+if(save_figures == TRUE){
+  panel_save(long.ptrauma_dkt_plot, "ptrauma_long_dkt", "pdf", figure_panels_folder)
+  panel_save(long.ptrauma_aseg_plot, "ptrauma_long_aseg", "pdf", figure_panels_folder)
+}
+```
+
+#Save scale images
+### -0.23 to 0.23
+```{r}
+# Create dummy data just to generate the colorbar
+df <- data.frame(x = 1, y = 1, beta = 0)
+
+beta_scale <- ggplot(df, aes(x, y, fill = beta)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "#4878CF",
+    mid = "white",
+    high = "#D65F5F",
+    midpoint = 0,
+    limits = c(-0.23, 0.23),
+    guide = guide_colorbar(
+      barwidth = 1,   # length of colorbar
+      barheight = 20    # thickness
+    )
+  ) +
+  theme_void() +  # remove axes, grid, etc.
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 16)
+  )
+beta_scale
+filename <- paste0(figures_grids_folder, "beta_scale.pdf")
+ggsave(filename, beta_scale)
+```
+#Put together subfactor figure grids
+##define helper functions
+```{r}
+strip_plot <- function(p) {
+  p +
+    labs(x = NULL, y = NULL) +
+    theme(
+      legend.position = "none",
+      plot.title = element_blank(),
+      axis.title = element_blank()
+    ) 
+}
+``` 
+##Supp. Figure for subfactors
+```{r}
+
+sfig_subfact_panels <- mget(c("t1.psy_dkt_plot","t2.psy_dkt_plot", "long.psy_dkt_plot",
+                              "t1.psy_aseg_plot","t2.psy_aseg_plot", "long.psy_aseg_plot",
+                              "t1.mania_dkt_plot","t2.mania_dkt_plot", "long.mania_dkt_plot",
+                              "t1.mania_aseg_plot","t2.mania_aseg_plot", "long.mania_aseg_plot",  
+                              "t1.conduct_dkt_plot","t2.conduct_dkt_plot", "long.conduct_dkt_plot",
+                              "t1.conduct_aseg_plot","t2.conduct_aseg_plot", "long.conduct_aseg_plot",   
+                              "t1.socanx_dkt_plot","t2.socanx_dkt_plot", "long.socanx_dkt_plot",
+                              "t1.socanx_aseg_plot","t2.socanx_aseg_plot", "long.socanx_aseg_plot",  
+                              "t1.att_dkt_plot","t2.att_dkt_plot", "long.att_dkt_plot",
+                              "t1.att_aseg_plot","t2.att_aseg_plot", "long.att_aseg_plot",
+                              "t1.som_dkt_plot","t2.som_dkt_plot", "long.som_dkt_plot",
+                              "t1.som_aseg_plot","t2.som_aseg_plot", "long.som_aseg_plot",  
+                              "t1.overeat_dkt_plot","t2.overeat_dkt_plot", "long.overeat_dkt_plot",
+                              "t1.overeat_aseg_plot","t2.overeat_aseg_plot", "long.overeat_aseg_plot",
+                              "t1.ptrauma_dkt_plot","t2.ptrauma_dkt_plot", "long.ptrauma_dkt_plot",
+                              "t1.ptrauma_aseg_plot","t2.ptrauma_aseg_plot", "long.ptrauma_aseg_plot"))
+
+
+sfig_subfact_panels <- lapply(sfig_subfact_panels, strip_plot)
+# arrange plots in desired order
+subfact.grid <- wrap_plots(sfig_subfact_panels, ncol = 3, nrow = 16)
+
+# add image to the right
+sfig_subfact <- subfact.grid | beta_scale
+
+sfig_subfact <- sfig_subfact +
+  plot_layout(widths = c(5, 1))
+
+sfig_subfact
+
+filename <- paste0(figures_grids_folder, "sfig_subfact_grid.pdf")
+cowplot::save_plot(filename, sfig_subfact, nrow = 3, ncol = 16, limitsize = FALSE)
+```
+
+#Compile all lm() stats to export and add to supplementary tables 7-9
+all volumes (regional and global together)
+##define function
+```{r}
+make_betas_table <- function(folder, pattern = NULL, cols_order_custom = NULL) {
+  
+  full_folder <- folder
+  
+  if (!is.null(pattern)) {
+    files <- list.files(full_folder)[grep(pattern, list.files(full_folder))]
+  } else {
+    files <- list.files(full_folder)
+  }
+  
+  # Initialize output tables
+  supp_betas_global <- data.frame(label = name_mapping$region_name[match(global_phenotypes,
+                                                                         name_mapping$abbreviation)],
+                                  row.names = global_phenotypes)
+  
+  supp_betas_regional <- data.frame(label = name_mapping$region_name[match(phenotypes_for_MC,
+                                                                           name_mapping$abbreviation)],
+                                    row.names = phenotypes_for_MC)
+  
+  # function add significance stars
+  sig_stars <- function(p) {
+      ifelse(is.na(p), NA,
+      ifelse(p < 0.001, "***",
+      ifelse(p < 0.01,  "**",
+      ifelse(p < 0.05,  "*", NA))))
+  }
+  # Loop over files
+  for (file in files) {
+    
+    message(file)
+    
+    table <- read.csv(paste0(full_folder, file)) %>% 
+      dplyr::rename(var_name = X)
+    
+    p_columns <- names(table)[grep("p_adj", names(table))]
+    
+    for (var_p in p_columns) {
+      
+      var_beta <- sub("p_adj", "beta", var_p)
+      p_col_name    <- paste(sub(".csv", "", file), var_p, sep = "_")
+      beta_col_name <- paste(sub(".csv", "", file), var_beta, sep = "_")
+      sig_col_name  <- paste(sub(".csv", "", file), sub("p_adj", "p_significance", var_p), sep = "_")
+      
+      # Extract columns from input table
+      tmp_p    <- table %>% select(label, all_of(var_p))
+      tmp_beta <- table %>% select(label, all_of(var_beta))
+      
+      # Create separate significance column
+      tmp_sig <- tmp_p
+      tmp_sig[[var_p]] <- sig_stars(tmp_p[[var_p]])
+      tmp_sig <- tmp_sig %>% rename(!!sig_col_name := var_p)
+      
+      # Rename p-values and beta columns
+      tmp_p    <- tmp_p %>% rename(!!p_col_name := var_p)
+      tmp_beta <- tmp_beta %>% rename(!!beta_col_name := var_beta)
+      
+      # Merge into global or regional table
+      if (grepl("regional", file)) {
+        supp_betas_regional <- merge(tmp_p, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- merge(tmp_beta, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- merge(tmp_sig, supp_betas_regional, by = "label", all.y = TRUE)
+        supp_betas_regional <- supp_betas_regional %>%
+          relocate(all_of(sig_col_name), .after = all_of(p_col_name))
+      } else if (grepl("global", file)) {
+        supp_betas_global <- merge(tmp_p, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- merge(tmp_beta, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- merge(tmp_sig, supp_betas_global, by = "label", all.y = TRUE)
+        supp_betas_global <- supp_betas_global %>%
+          relocate(all_of(sig_col_name), .after = all_of(p_col_name))
+      }
+    }
+  }
+ #remove global and regional from column names
+ names(supp_betas_global) <- sub("global", "", names(supp_betas_global))
+ names(supp_betas_regional) <- sub("regional", "", names(supp_betas_regional))
+ #create column for global vs regional variables
+ supp_betas_global$region <- rep("global", dim(supp_betas_global)[1])
+ supp_betas_regional$region <- rep("region", dim(supp_betas_regional)[1])
+ ##add label for regions not plotted in figures
+ supp_betas_regional$noplot <- ifelse(supp_betas_regional$label %in% regions_notplotted$region_name, "X", NA)
+ #combine global and regional into one big dataframe
+ supp_betas_all <- bind_rows(supp_betas_regional, supp_betas_global)
+ 
+ ##determine order of columns
+ col_names <- names(supp_betas_all)
+ 
+ if(is.null(cols_order_custom)){
+ cols_order <- c("label", "region", "noplot",
+                 col_names[grepl("^bw__", col_names)],
+                 col_names[grepl("^bw_icv", col_names)],
+                 col_names[grepl("^bw_wh", col_names)],
+                 col_names[grepl("^bw_ses", col_names)],
+                 col_names[grepl("^bw_neocomp", col_names)],
+                 col_names[grepl("^bwtwin", col_names)],
+                 col_names[grepl("^ga__", col_names)],
+                 col_names[grepl("^ga_icv", col_names)],
+                 col_names[grepl("^ga_wh", col_names)],
+                 col_names[grepl("^ga_ses", col_names)],
+                 col_names[grepl("^ga_neocomp", col_names)],
+                 col_names[grepl("^gatwin", col_names)],
+                 col_names[grepl("^ga38", col_names)],
+                 col_names[grepl("^bwp__", col_names)],
+                 col_names[grepl("^bwp_icv", col_names)],
+                 col_names[grepl("^bwp_wh", col_names)],
+                 col_names[grepl("^bwp_ses", col_names)],
+                 col_names[grepl("^bwp_ga", col_names)],
+                 col_names[grepl("^bwptwin", col_names)],
+                 col_names[grepl("^bw_pgs__", col_names)],
+                 col_names[grepl("^bw_pgs_icv", col_names)],
+                 col_names[grepl("^bw_pgs_wh", col_names)],
+                 col_names[grepl("^bw_pgs_ses", col_names)],
+                 col_names[grepl("^bw_pgstwin", col_names)],
+                 col_names[grepl("^bw_bwpgs", col_names)],
+                 col_names[grepl("^neocomp__", col_names)],
+                 col_names[grepl("^neocomp_icv", col_names)],
+                 col_names[grepl("^neocomp_wh", col_names)],
+                 col_names[grepl("^neocomp_ses", col_names)],
+                 col_names[grepl("^neocomptwin", col_names)],
+                 col_names[grepl("^gp__", col_names)],
+                 col_names[grepl("^gp_icv", col_names)],
+                 col_names[grepl("^gp_wh", col_names)],
+                 col_names[grepl("^gp_ses", col_names)],
+                 col_names[grepl("^gptwin", col_names)],
+                 col_names[grepl("^gp_change", col_names)],
+                 col_names[grepl("^gptime1", col_names)],
+                 col_names[grepl("^gptime2", col_names)],
+                 col_names[grepl("^gpt1", col_names)],
+                 col_names[grepl("^gpt2", col_names)],
+                 )
+ 
+ }
+ else {
+    cols_order <- c(
+    "label", "region", "noplot",
+    unlist(
+      lapply(cols_order_custom,
+        function(x) col_names[grepl(paste0("^", x), col_names)] ) ) )
+ }
+ #check if all columns are accounted for
+ if (length(col_names[!(col_names %in% cols_order)])>0) {
+   stop_message <- paste("Not all columns are accounted for in ordering: ",paste(col_names[!(col_names %in% cols_order)], collapse = "\n"), sep = "\n")
+  stop(stop_message)
+}
+   supp_betas_all <- supp_betas_all %>%
+     select(all_of(cols_order)) %>%
+     arrange(region) %>%
+     rename(phenotype = "label", group = "region", not_plotted = "noplot")
+  
+  return(supp_betas_all)
+}
+```
+##run function and save all together
+```{r}
+subfactor_betas <- make_betas_table(glue("{betas_folder}subfactor_extended/"), 
+                                    cols_order_custom = c("psy__t1", "mania__t1", "conduct__t1", "socanx__t1",
+                                                          "att__t1", "som__t1", "overeat__t1", "ptrauma__t1",
+                                                          "psy__t2", "mania__t2", "conduct__t2", "socanx__t2",
+                                                          "att__t2", "som__t2", "overeat__t2", "ptrauma__t2",
+                                                          "psy__long", "mania__long", "conduct__long", "socanx__long",
+                                                          "att__long", "som__long", "overeat__long", "ptrauma__long"))
+#save as csv
+filename <- paste0("subfactor_betas_all", Sys.Date(), ".csv")
+write.csv(subfactor_betas, paste0(supp_betas_table_folder, filename))
+```

@@ -1,0 +1,1676 @@
+---
+title: "all models results"
+author: "Eren Kafadar"
+date: "2025-06-23"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+#Main Setup
+```{r setup, include=FALSE}
+save_tables <- TRUE
+save_figures <- TRUE
+code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
+save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
+data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
+knitr::opts_chunk$set(echo = TRUE)
+#Load libraries
+library(dplyr)
+library(magrittr)
+library(readr)
+library(stringr)
+library(gamlss) #to fit model
+require(gamlss.ggplots)
+library(splines)
+library(tidyr)
+library(gamlssTools) #Margaret's package
+#For figures/plotting
+library(ggplot2)
+library(gridExtra)
+library(ggsegDKT)
+library(ggseg)
+library(ggpubr)
+library(glue)
+library(ggcorrplot)
+library(cowplot)
+library(egg)
+library(interactions)
+library(growthstandards)
+library(gtsummary)
+library(svglite)
+library(patchwork)
+
+
+source(paste0(code_path, "load_data_fct.R"))
+source("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/long_centile_sim_plot.R")
+
+#df to map variable names onto names displayed on figures
+name_mapping <- data.frame(
+  abbreviation = c(
+     "smri_vol_cdk_totallh", "smri_vol_cdk_totalrh", "smri_vol_cdk_total",   
+     "totalWM_cb", "totalWM_crb", "totalGM_crb",
+     
+    "smri_vol_scs_cbwmatterlh", "smri_vol_scs_ltventriclelh", "smri_vol_scs_inflatventlh",
+    "smri_vol_scs_crbwmatterlh", "smri_vol_scs_crbcortexlh", "smri_vol_scs_tplh",
+    "smri_vol_scs_caudatelh", "smri_vol_scs_putamenlh", "smri_vol_scs_pallidumlh",
+    "smri_vol_scs_3rdventricle", "smri_vol_scs_4thventricle", "smri_vol_scs_bstem",
+    "smri_vol_scs_hpuslh", "smri_vol_scs_amygdalalh", "smri_vol_scs_csf",
+    "smri_vol_scs_lesionlh", "smri_vol_scs_aal", "smri_vol_scs_vedclh",
+    
+    "smri_vol_scs_cbwmatterrh", "smri_vol_scs_ltventriclerh", "smri_vol_scs_inflatventrh",
+    "smri_vol_scs_crbwmatterrh", "smri_vol_scs_crbcortexrh", "smri_vol_scs_tprh",
+    "smri_vol_scs_caudaterh", "smri_vol_scs_putamenrh", "smri_vol_scs_pallidumrh",
+    "smri_vol_scs_hpusrh", "smri_vol_scs_amygdalarh", "smri_vol_scs_lesionrh",
+    "smri_vol_scs_aar", "smri_vol_scs_vedcrh", 
+    
+    "smri_vol_scs_wmhint",
+    "smri_vol_scs_wmhintlh", "smri_vol_scs_wmhintrh", 
+    
+    "smri_vol_scs_ccps",
+    "smri_vol_scs_ccmidps", "smri_vol_scs_ccct", "smri_vol_scs_ccmidat",
+    "smri_vol_scs_ccat", 
+    
+    "smri_vol_scs_wholeb", "smri_vol_scs_latventricles",
+    "smri_vol_scs_allventricles", "smri_vol_scs_intracranialv", "smri_vol_scs_suprateialv",
+    "smri_vol_scs_subcorticalgv",
+    
+    "smri_vol_cdk_banksstslh", "smri_vol_cdk_cdacatelh", "smri_vol_cdk_cdmdfrlh",
+    "smri_vol_cdk_cuneuslh", "smri_vol_cdk_ehinallh", "smri_vol_cdk_fusiformlh",
+    "smri_vol_cdk_ifpllh", "smri_vol_cdk_iftmlh", "smri_vol_cdk_ihcatelh",
+    "smri_vol_cdk_locclh", "smri_vol_cdk_lobfrlh", "smri_vol_cdk_linguallh",
+    "smri_vol_cdk_mobfrlh", "smri_vol_cdk_mdtmlh", "smri_vol_cdk_parahpallh",
+    "smri_vol_cdk_paracnlh", "smri_vol_cdk_parsopclh", "smri_vol_cdk_parsobislh",
+    "smri_vol_cdk_parstgrislh", "smri_vol_cdk_pericclh", "smri_vol_cdk_postcnlh",
+    "smri_vol_cdk_ptcatelh", "smri_vol_cdk_precnlh", "smri_vol_cdk_pclh",
+    "smri_vol_cdk_rracatelh", "smri_vol_cdk_rrmdfrlh", "smri_vol_cdk_sufrlh",
+    "smri_vol_cdk_supllh", "smri_vol_cdk_sutmlh", "smri_vol_cdk_smlh",
+    "smri_vol_cdk_frpolelh", "smri_vol_cdk_tmpolelh", "smri_vol_cdk_trvtmlh",
+    "smri_vol_cdk_insulalh",
+    
+     "smri_vol_cdk_banksstsrh", "smri_vol_cdk_cdacaterh", "smri_vol_cdk_cdmdfrrh",
+    "smri_vol_cdk_cuneusrh", "smri_vol_cdk_ehinalrh", "smri_vol_cdk_fusiformrh",
+    "smri_vol_cdk_ifplrh", "smri_vol_cdk_iftmrh", "smri_vol_cdk_ihcaterh",
+    "smri_vol_cdk_loccrh", "smri_vol_cdk_lobfrrh", "smri_vol_cdk_lingualrh",
+    "smri_vol_cdk_mobfrrh", "smri_vol_cdk_mdtmrh", "smri_vol_cdk_parahpalrh",
+    "smri_vol_cdk_paracnrh", "smri_vol_cdk_parsopcrh", "smri_vol_cdk_parsobisrh",
+    "smri_vol_cdk_parstgrisrh", "smri_vol_cdk_periccrh", "smri_vol_cdk_postcnrh",
+    "smri_vol_cdk_ptcaterh", "smri_vol_cdk_precnrh", "smri_vol_cdk_pcrh",
+    "smri_vol_cdk_rracaterh", "smri_vol_cdk_rrmdfrrh", "smri_vol_cdk_sufrrh",
+    "smri_vol_cdk_suplrh", "smri_vol_cdk_sutmrh", "smri_vol_cdk_smrh",
+    "smri_vol_cdk_frpolerh", "smri_vol_cdk_tmpolerh", "smri_vol_cdk_trvtmrh",
+    "smri_vol_cdk_insularh"
+  ),
+  region_name = c(
+    "Left-Cerebral_Cortex", "Right-Cerebral-Cortex", "Total-Cerebral-Cortex",
+    "Total_Cerebral-WM", "Total_Cerebellum-WM", "Total-Cerebellum-Cortex",
+    
+    "Left-Cerebral-White-Matter", "Left-Lateral-Ventricle", "Left-Inf-Lat-Vent",
+    "Left-Cerebellum-White-Matter", "Left-Cerebellum-Cortex", "Left-Thalamus-Proper",
+    "Left-Caudate", "Left-Putamen", "Left-Pallidum",
+    "x3rd-ventricle", "x4th-ventricle", "Brain-Stem",
+    "Left-Hippocampus", "Left-Amygdala", "Cerebrospinal-Fluid",
+    "Left-Lesion", "Left-Accumbens-Area", "Left-VentralDC",
+    
+   "Right-Cerebral-White-Matter", "Right-Lateral-Ventricle", "Right-Inf-Lat-Vent",
+    "Right-Cerebellum-White-Matter", "Right-Cerebellum-Cortex", "Right-Thalamus-Proper",
+    "Right-Caudate", "Right-Putamen", "Right-Pallidum",
+    "Right-Hippocampus", "Right-Amygdala",
+    "Right-Lesion", "Right-Accumbens-Area", "Right-VentralDC",
+    
+    "WM-Hypointensities","Left-WM-Hypointensities", "Right-WM-Hypointensities",
+   
+   "CC_Posterior","CC_Mid_Posterior", "CC_Central", "CC_Mid_Anterior",
+    "CC_Anterior", 
+   
+   "WholeBrain", "LatVentricles","AllVentricles", "IntracranialVolume", 
+   "SupratentorialVolume", "SubcorticalGrayVolume",
+   
+     "lh_bankssts", "lh_caudalanteriorcingulate", "lh_caudalmiddlefrontal",
+    "lh_cuneus", "lh_entorhinal", "lh_fusiform",
+    "lh_inferiorparietal", "lh_inferiortemporal", "lh_isthmuscingulate",
+    "lh_lateraloccipital", "lh_lateralorbitofrontal", "lh_lingual",
+    "lh_medialorbitofrontal", "lh_middletemporal", "lh_parahippocampal",
+    "lh_paracentral", "lh_parsopercularis", "lh_parsorbitalis",
+    "lh_parstriangularis", "lh_pericalcarine", "lh_postcentral",
+    "lh_posteriorcingulate", "lh_precentral", "lh_precuneus", "lh_rostralanteriorcingulate",
+    "lh_rostralmiddlefrontal", "lh_superiorfrontal", "lh_superiorparietal",
+    "lh_superiortemporal", "lh_supramarginal", "lh_frontalpole",
+    "lh_temporalpole", "lh_transversetemporal", "lh_insula",
+   
+     "rh_bankssts", "rh_caudalanteriorcingulate", "rh_caudalmiddlefrontal",
+    "rh_cuneus", "rh_entorhinal", "rh_fusiform",
+    "rh_inferiorparietal", "rh_inferiortemporal", "rh_isthmuscingulate",
+    "rh_lateraloccipital", "rh_lateralorbitofrontal", "rh_lingual",
+    "rh_medialorbitofrontal", "rh_middletemporal", "rh_parahippocampal",
+    "rh_paracentral", "rh_parsopercularis", "rh_parsorbitalis",
+    "rh_parstriangularis", "rh_pericalcarine", "rh_postcentral",
+    "rh_posteriorcingulate", "rh_precentral", "rh_precuneus", "rh_rostralanteriorcingulate",
+    "rh_rostralmiddlefrontal", "rh_superiorfrontal", "rh_superiorparietal",
+    "rh_superiortemporal", "rh_supramarginal", "rh_frontalpole",
+    "rh_temporalpole", "rh_transversetemporal", "rh_insula"
+    )
+)
+
+phenotypes_for_MC <- c(
+    "smri_vol_scs_ltventriclelh", "smri_vol_scs_inflatventlh",
+    "smri_vol_scs_crbwmatterlh", "smri_vol_scs_crbcortexlh", "smri_vol_scs_tplh",
+    "smri_vol_scs_caudatelh", "smri_vol_scs_putamenlh", "smri_vol_scs_pallidumlh",
+    "smri_vol_scs_3rdventricle", "smri_vol_scs_4thventricle", "smri_vol_scs_bstem",
+    "smri_vol_scs_hpuslh", "smri_vol_scs_amygdalalh", "smri_vol_scs_aal", "smri_vol_scs_vedclh",
+    
+    "smri_vol_scs_ltventriclerh", "smri_vol_scs_inflatventrh",
+    "smri_vol_scs_crbwmatterrh", "smri_vol_scs_crbcortexrh", "smri_vol_scs_tprh",
+    "smri_vol_scs_caudaterh", "smri_vol_scs_putamenrh", "smri_vol_scs_pallidumrh",
+    "smri_vol_scs_hpusrh", "smri_vol_scs_amygdalarh",
+    "smri_vol_scs_aar", "smri_vol_scs_vedcrh", 
+    
+    "smri_vol_scs_ccps",
+    "smri_vol_scs_ccmidps", "smri_vol_scs_ccct", "smri_vol_scs_ccmidat",
+    "smri_vol_scs_ccat",
+    
+    "smri_vol_cdk_banksstslh", "smri_vol_cdk_cdacatelh", "smri_vol_cdk_cdmdfrlh",
+    "smri_vol_cdk_cuneuslh", "smri_vol_cdk_ehinallh", "smri_vol_cdk_fusiformlh",
+    "smri_vol_cdk_ifpllh", "smri_vol_cdk_iftmlh", "smri_vol_cdk_ihcatelh",
+    "smri_vol_cdk_locclh", "smri_vol_cdk_lobfrlh", "smri_vol_cdk_linguallh",
+    "smri_vol_cdk_mobfrlh", "smri_vol_cdk_mdtmlh", "smri_vol_cdk_parahpallh",
+    "smri_vol_cdk_paracnlh", "smri_vol_cdk_parsopclh", "smri_vol_cdk_parsobislh",
+    "smri_vol_cdk_parstgrislh", "smri_vol_cdk_pericclh", "smri_vol_cdk_postcnlh",
+    "smri_vol_cdk_ptcatelh", "smri_vol_cdk_precnlh", "smri_vol_cdk_pclh",
+    "smri_vol_cdk_rracatelh", "smri_vol_cdk_rrmdfrlh", "smri_vol_cdk_sufrlh",
+    "smri_vol_cdk_supllh", "smri_vol_cdk_sutmlh", "smri_vol_cdk_smlh",
+    "smri_vol_cdk_frpolelh", "smri_vol_cdk_tmpolelh", "smri_vol_cdk_trvtmlh",
+    "smri_vol_cdk_insulalh",
+    
+     "smri_vol_cdk_banksstsrh", "smri_vol_cdk_cdacaterh", "smri_vol_cdk_cdmdfrrh",
+    "smri_vol_cdk_cuneusrh", "smri_vol_cdk_ehinalrh", "smri_vol_cdk_fusiformrh",
+    "smri_vol_cdk_ifplrh", "smri_vol_cdk_iftmrh", "smri_vol_cdk_ihcaterh",
+    "smri_vol_cdk_loccrh", "smri_vol_cdk_lobfrrh", "smri_vol_cdk_lingualrh",
+    "smri_vol_cdk_mobfrrh", "smri_vol_cdk_mdtmrh", "smri_vol_cdk_parahpalrh",
+    "smri_vol_cdk_paracnrh", "smri_vol_cdk_parsopcrh", "smri_vol_cdk_parsobisrh",
+    "smri_vol_cdk_parstgrisrh", "smri_vol_cdk_periccrh", "smri_vol_cdk_postcnrh",
+    "smri_vol_cdk_ptcaterh", "smri_vol_cdk_precnrh", "smri_vol_cdk_pcrh",
+    "smri_vol_cdk_rracaterh", "smri_vol_cdk_rrmdfrrh", "smri_vol_cdk_sufrrh",
+    "smri_vol_cdk_suplrh", "smri_vol_cdk_sutmrh", "smri_vol_cdk_smrh",
+    "smri_vol_cdk_frpolerh", "smri_vol_cdk_tmpolerh", "smri_vol_cdk_trvtmrh",
+    "smri_vol_cdk_insularh"
+  )
+
+global_phenotypes <- c("smri_vol_cdk_total", "totalWM_cb", "smri_vol_scs_allventricles", "smri_vol_scs_subcorticalgv")
+
+phenotypes_to_fit <- (c(phenotypes_for_MC, global_phenotypes, "smri_vol_scs_wholeb", "smri_vol_scs_wholeb", "totalWM_crb", "totalGM_crb", "smri_vol_scs_csf", "smri_vol_cdk_totallh", "smri_vol_cdk_totalrh", "smri_vol_scs_cbwmatterlh", "smri_vol_scs_cbwmatterrh"))
+
+#save phenotypes not plotted with ggseg surface plots
+plot_data_dkt <- merge(name_mapping, ggseg::dk, by.x = "region_name", by.y = "label")
+plot_data_aseg <- merge(name_mapping, ggseg::aseg, by.x = "region_name", by.y = "label")
+
+#Regions not matched in atlases that are tested
+regions_notplotted <- name_mapping[!(name_mapping$region_name %in% plot_data_dkt$region_name) & !(name_mapping$region_name %in% plot_data_aseg$region_name),] %>% filter(abbreviation %in% phenotypes_for_MC)
+write.csv(regions_notplotted, "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/regions_notplotted.csv")
+```
+#Create folders for saving output
+```{r}
+betas_folder <- paste0(save_path, "full_betas/")
+if (!dir.exists(paste0(save_path, "full_betas/"))) dir.create(betas_folder)
+
+dkt_folder <- paste0(save_path, "dkt_betas/")
+if (!dir.exists(dkt_folder)) dir.create(dkt_folder)
+
+tableOne_folder <- paste0(save_path, "table_one/")
+if (!dir.exists(tableOne_folder)) dir.create(tableOne_folder)
+
+supp_betas_table_folder <- paste0(save_path, "supplementary_betas_tables/")
+if (!dir.exists(supp_betas_table_folder)) dir.create(supp_betas_table_folder)
+
+
+figure_panels_folder <- paste0(save_path, "figure_panels/")
+if (!dir.exists(figure_panels_folder)) dir.create(figure_panels_folder)
+
+revisions_panels_folder <- paste0(save_path, "revisions_panels/")
+if (!dir.exists(revisions_panels_folder)) dir.create(revisions_panels_folder)
+
+extra_panels_folder <- paste0(save_path, "extra_panels/")
+if (!dir.exists(extra_panels_folder)) dir.create(extra_panels_folder)
+
+panel_save <- function(plot, filename, extension, folder){
+  save_name <- paste0(folder, filename, ".", extension)
+  ggsave(save_name, plot = plot, dpi = 300)
+}
+```
+#Data Setup
+Load all saved centiles data tables for t1, t2, and longitudinal
+##T1
+###Define files
+```{r}
+#file paths
+splitOne_folder <- paste0(save_path, "gamlss_fits_t1_BCT_vol_splitONE_2.0/")
+splitTwo_folder <- paste0(save_path,"gamlss_fits_t1_BCT_vol_splitTWO_2.0/")
+sOne_fits_stats_filename <- paste0(splitOne_folder, "gamlss_fits_stats_all.csv")
+sTwo_fits_stats_filename <- paste0(splitTwo_folder, "gamlss_fits_stats_all.csv")
+splitOne_train_filename <- paste0(data_path, "abcd_long_Onetrain2025-09-26.csv")
+splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
+splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
+splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
+
+t1.centiles_filename <- paste0(save_path, "centiles_calculated/t1.volume_centiles_2025-11-15.csv")
+```
+###Load data frames and clean them up
+```{r}
+#rename variables and select t1 scans
+rename_vec <- c(age = "interview_age", sex = "sex_baseline", site = "site_id_l", nonSingleton = "nonSingleton")
+
+t1.sOne_train_df <- read.csv(splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sOne_train_df$sex <- as.factor(t1.sOne_train_df$sex)
+t1.sOne_train_df$site <- as.factor(t1.sOne_train_df$site)
+t1.sOne_train_df$age <- as.numeric(t1.sOne_train_df$age)
+
+t1.sTwo_train_df <- read.csv(splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sTwo_train_df$sex <- as.factor(t1.sTwo_train_df$sex)
+t1.sTwo_train_df$site <- as.factor(t1.sTwo_train_df$site)
+t1.sTwo_train_df$age <- as.numeric(t1.sTwo_train_df$age)
+
+t1.sOne_test_df <- read.csv(splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sOne_test_df$sex <- as.factor(t1.sOne_test_df$sex)
+t1.sOne_test_df$site <- as.factor(t1.sOne_test_df$site)
+t1.sOne_test_df$age <- as.numeric(t1.sOne_test_df$age)
+
+t1.sTwo_test_df <- read.csv(splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t1")
+t1.sTwo_test_df$sex <- as.factor(t1.sTwo_test_df$sex)
+t1.sTwo_test_df$site <- as.factor(t1.sTwo_test_df$site)
+t1.sTwo_test_df$age <- as.numeric(t1.sTwo_test_df$age)
+```
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+t1.centiles <- read.csv(t1.centiles_filename)  %>% select(-1)
+names(t1.centiles) <- sub("_centiles", ".t1_centiles", names(t1.centiles))
+t1.full_test_df <- rbind(t1.sOne_test_df,t1.sTwo_test_df)
+t1.full_test_df <- merge(t1.centiles, t1.full_test_df, by = "src_subject_id")
+```
+###calculate birth weight percentile
+```{r}
+#convert birthweight into percentiles using the gitHub growthstandards package which use the intergrowth charts
+t1.full_test_df <- t1.full_test_df %>%
+  mutate(birth_weight_kg = birth_weight_oz_sum_adj * 0.0283495) %>%
+  mutate(gestAge_days = gestAge*7+3) %>%
+  mutate(sexLong = recode(sex, "M" = "Male", "F" = "Female"))
+
+t1.full_test_df$bweight_percentile <- igb_wtkg2centile(t1.full_test_df$gestAge_days, t1.full_test_df$birth_weight_kg, sex = t1.full_test_df$sexLong)/100
+
+t1.full_test_df$bw_category <- ifelse(t1.full_test_df$bweight_percentile < 0.10, "SGA", ifelse(t1.full_test_df$bweight_percentile > 0.90, "LGA", "AGA"))
+t1.full_test_df$sexLong <- NULL
+```
+###QC for weight/height measures
+```{r}
+#keep original columns
+t1.full_test_df$anthroweightcalc_og <- t1.full_test_df$anthroweightcalc
+t1.full_test_df$anthroheightcalc_og <- t1.full_test_df$anthroheightcalc
+
+#remove based on <30lbs, too low weight
+#t1weight_mean <- mean(t1.full_test_df$anthroweightcalc, na.rm = TRUE)
+#t1weight_sd <- sd(t1.full_test_df$anthroweightcalc, na.rm = TRUE)
+t1.full_test_df$anthroweightcalc <- ifelse(t1.full_test_df$anthroweightcalc <30 , NA,
+                                           t1.full_test_df$anthroweightcalc)
+
+sum(is.na(t1.full_test_df$anthroweightcalc)) - sum(is.na(t1.full_test_df$anthroweightcalc_og)) #6 removed
+
+#remove under 30 inches, two people at 0 and 4 inches removed, or over 80 inches, two removed
+#t1height_mean <- mean(t1.full_test_df$anthroheightcalc, na.rm = TRUE)
+#t1height_sd <- sd(t1.full_test_df$anthroheightcalc, na.rm = TRUE)
+t1.full_test_df$anthroheightcalc <- ifelse(t1.full_test_df$anthroheightcalc < 30 | t1.full_test_df$anthroheightcalc > 80, NA,
+                                           t1.full_test_df$anthroheightcalc)
+
+sum(is.na(t1.full_test_df$anthroheightcalc)) - sum(is.na(t1.full_test_df$anthroheightcalc_og)) #4 removed
+
+```
+###encode full term as 38 weeks and 39 weeks
+```{r}
+t1.full_test_df$gestAge_38term <- ifelse(t1.full_test_df$gestAge == 40, 38, t1.full_test_df$gestAge)
+t1.full_test_df$gestAge_39term <- ifelse(t1.full_test_df$gestAge == 40, 39, t1.full_test_df$gestAge)
+```
+
+### rename psychopathology subfactors
+```{r}
+t1.full_test_df <- t1.full_test_df %>%
+  rename(psy = Factor1,
+         mania = Factor2,
+         conduct = Factor3,
+         socanx = Factor4,
+         att = Factor5,
+         som = Factor6,
+         overeat = Factor7,
+         ptrauma = Factor8)
+```
+##T2
+###Define files
+```{r}
+#file paths
+t2.splitOne_folder <- paste0(save_path, "gamlss_fits_t2_BCT_vol_splitONE_2.0/")
+t2.splitTwo_folder <- paste0(save_path, "gamlss_fits_t2_BCT_vol_splitTWO_2.0/")
+t2.sOne_fits_stats_filename <- paste0(t2.splitOne_folder, "gamlss_fits_stats_all.csv")
+t2.sTwo_fits_stats_filename <- paste0(t2.splitTwo_folder, "gamlss_fits_stats_all.csv")
+
+splitOne_train_filename <-paste0(data_path, "abcd_long_Onetrain2025-09-26.csv")
+splitTwo_train_filename <- paste0(data_path, "abcd_long_Twotrain2025-09-26.csv")
+splitOne_test_filename <- paste0(data_path, "abcd_long_Onetest2025-09-26.csv")
+splitTwo_test_filename <- paste0(data_path, "abcd_long_Twotest2025-09-26.csv")
+
+t2.centiles_filename <- paste0(save_path, "centiles_calculated/t2.volume_centiles_2025-11-15.csv")
+```
+### Load data frames and clean them up
+```{r}
+#rename variables and select t2 scans
+rename_vec <- c(age = "interview_age", sex = "sex_baseline", site = "site_id_l", nonSingleton = "nonSingleton")
+
+t2.sOne_train_df <- read.csv(splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sOne_train_df$sex <- as.factor(t2.sOne_train_df$sex)
+t2.sOne_train_df$site <- as.factor(t2.sOne_train_df$site)
+t2.sOne_train_df$age <- as.numeric(t2.sOne_train_df$age)
+
+t2.sTwo_train_df <- read.csv(splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sTwo_train_df$sex <- as.factor(t2.sTwo_train_df$sex)
+t2.sTwo_train_df$site <- as.factor(t2.sTwo_train_df$site)
+t2.sTwo_train_df$age <- as.numeric(t2.sTwo_train_df$age)
+
+t2.sOne_test_df <- read.csv(splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sOne_test_df$sex <- as.factor(t2.sOne_test_df$sex)
+t2.sOne_test_df$site <- as.factor(t2.sOne_test_df$site)
+t2.sOne_test_df$age <- as.numeric(t2.sOne_test_df$age)
+
+t2.sTwo_test_df <- read.csv(splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec)) %>% 
+  subset(eventname == "t2")
+t2.sTwo_test_df$sex <- as.factor(t2.sTwo_test_df$sex)
+t2.sTwo_test_df$site <- as.factor(t2.sTwo_test_df$site)
+t2.sTwo_test_df$age <- as.numeric(t2.sTwo_test_df$age)
+```
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+t2.centiles <- read.csv(t2.centiles_filename)  %>% select(-1)
+names(t2.centiles) <- sub("_centiles", ".t2_centiles", names(t2.centiles))
+t2.full_test_df <- rbind(t2.sOne_test_df,t2.sTwo_test_df)
+t2.full_test_df <- merge(t2.centiles, t2.full_test_df, by = "src_subject_id")
+```
+
+### Add variables for analyses
+```{r}
+# neonatal comp in this df is not calculated correctly, it is NA vector, take it from the t1 df
+t2.full_test_df$neonatal_comp_total <- NULL
+
+t2.full_test_df <- merge(t2.full_test_df, 
+                           t1.full_test_df %>%
+                             select(src_subject_id, gestAge_38term,bweight_percentile, neonatal_comp_total),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id")
+```
+
+###QC for weight/height measures
+```{r}
+#keep original columns
+t2.full_test_df$anthroweightcalc_og <- t2.full_test_df$anthroweightcalc
+t2.full_test_df$anthroheightcalc_og <- t2.full_test_df$anthroheightcalc
+
+#remove based on >400lbs, one very high removed at 3580lbs
+#t2weight_mean <- mean(t2.full_test_df$anthroweightcalc, na.rm = TRUE)
+#t2weight_sd <- sd(t2.full_test_df$anthroweightcalc, na.rm = TRUE)
+t2.full_test_df$anthroweightcalc <- ifelse(t2.full_test_df$anthroweightcalc > 400, NA,
+                                           t2.full_test_df$anthroweightcalc)
+
+sum(is.na(t2.full_test_df$anthroweightcalc)) - sum(is.na(t2.full_test_df$anthroweightcalc_og)) #1 removed
+
+#remove under 30 inches, one person at 6.5 inches, over 80 inches - 3 people at 89+ inches removed
+#t2height_mean <- mean(t2.full_test_df$anthroheightcalc, na.rm = TRUE)
+#t2height_sd <- sd(t2.full_test_df$anthroheightcalc, na.rm = TRUE)
+t2.full_test_df$anthroheightcalc <- ifelse(t2.full_test_df$anthroheightcalc < 30 | t2.full_test_df$anthroheightcalc > 80, NA,
+                                           t2.full_test_df$anthroheightcalc)
+
+sum(is.na(t2.full_test_df$anthroheightcalc)) - sum(is.na(t2.full_test_df$anthroheightcalc_og)) #4 removed
+
+```
+
+### rename psychopathology subfactors
+```{r}
+t2.full_test_df <- t2.full_test_df %>%
+  rename(psy = Factor1,
+         mania = Factor2,
+         conduct = Factor3,
+         socanx = Factor4,
+         att = Factor5,
+         som = Factor6,
+         overeat = Factor7,
+         ptrauma = Factor8)
+```
+
+##LONG
+###Define files
+```{r}
+#file paths
+long.splitOne_folder <- paste0(save_path, "gamlss_fits_long_vol_splitONE_2.0/")
+long.splitTwo_folder <- paste0(save_path, "gamlss_fits_long_vol_splitTWO_2.0/")
+long.sOne_fits_stats_filename <- paste0(long.splitOne_folder, "gamlss_fits_stats_all.csv")
+long.sTwo_fits_stats_filename <- paste0(long.splitTwo_folder, "gamlss_fits_stats_all.csv")
+
+long.splitOne_train_filename <- paste0(data_path, "abcd_wide_Onetrain2025-10-03.csv")
+long.splitTwo_train_filename <- paste0(data_path, "abcd_wide_Twotrain2025-10-03.csv")
+long.splitOne_test_filename <- paste0(data_path, "abcd_wide_Onetest2025-10-03.csv")
+long.splitTwo_test_filename <- paste0(data_path, "abcd_wide_Twotest2025-10-03.csv")
+
+long.centiles_filename <- paste0(save_path, "centiles_calculated/long.volume_centiles_2025-11-15.csv")
+```
+###Load data frames and clean them up
+```{r}
+#rename variables
+rename_vec <- c(age = "interview_age.t2", sex = "sex_baseline", site = "site_id_l.t2")
+
+long.sOne_train_df <- read.csv(long.splitOne_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sOne_train_df$sex <- as.factor(long.sOne_train_df$sex)
+long.sOne_train_df$site <- as.factor(long.sOne_train_df$site)
+long.sOne_train_df$age <- as.numeric(long.sOne_train_df$age)
+
+long.sTwo_train_df <- read.csv(long.splitTwo_train_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sTwo_train_df$sex <- as.factor(long.sTwo_train_df$sex)
+long.sTwo_train_df$site <- as.factor(long.sTwo_train_df$site)
+long.sTwo_train_df$age <- as.numeric(long.sTwo_train_df$age)
+
+long.sOne_test_df <- read.csv(long.splitOne_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sOne_test_df$sex <- as.factor(long.sOne_test_df$sex)
+long.sOne_test_df$site <- as.factor(long.sOne_test_df$site)
+long.sOne_test_df$age <- as.numeric(long.sOne_test_df$age)
+
+long.sTwo_test_df <- read.csv(long.splitTwo_test_filename)  %>% select(-1) %>% rename(., all_of(rename_vec))
+long.sTwo_test_df$sex <- as.factor(long.sTwo_test_df$sex)
+long.sTwo_test_df$site <- as.factor(long.sTwo_test_df$site)
+long.sTwo_test_df$age <- as.numeric(long.sTwo_test_df$age)
+```
+
+###load saved centiles and merge with full test df (both sOne test and sTwo test)
+```{r}
+long.centiles <- read.csv(long.centiles_filename)  %>% select(-1)
+names(long.centiles) <- sub(".t2_centiles", ".long_centiles", names(long.centiles))
+long.full_test_df <- rbind(long.sOne_test_df,long.sTwo_test_df)
+long.full_test_df <- merge(long.centiles, long.full_test_df, by = "src_subject_id")
+```
+
+### Add variables for analyses
+```{r}
+long.full_test_df <- merge(long.full_test_df, 
+                           t1.full_test_df %>% rename (General_p.t1 = General_p,
+                                            psy.t1 = psy, mania.t1 = mania, conduct.t1 = conduct,
+                                            socanx.t1 = socanx, att.t1 = att, som.t1 = som,
+                                            overeat.t1 = overeat, ptrauma.t1 = ptrauma,
+                                            anthroheightcalc.t1 = anthroheightcalc, 
+                                            anthroweightcalc.t1 = anthroweightcalc) %>% 
+                             select(src_subject_id, birth_weight_oz_sum_adj, gestAge, gestAge_38term,
+                                                      nonSingleton, bweight_percentile, neonatal_comp_total, 
+                                                      bw_pgs, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PC8, PC9, PC10,
+                                                      General_p.t1, psy.t1, mania.t1, conduct.t1, socanx.t1, att.t1, 
+                                                      som.t1, overeat.t1, ptrauma.t1, anthroweightcalc.t1, anthroheightcalc.t1),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id")
+
+long.full_test_df <- merge(long.full_test_df, 
+                           t2.full_test_df %>% rename (General_p.t2 = General_p,
+                                            psy.t2 = psy, mania.t2 = mania, conduct.t2 = conduct,
+                                            socanx.t2 = socanx, att.t2 = att, som.t2 = som,
+                                            overeat.t2 = overeat, ptrauma.t2 = ptrauma,
+                                            anthroheightcalc.t2 = anthroheightcalc, 
+                                            anthroweightcalc.t2 = anthroweightcalc) %>% 
+                             select(src_subject_id, General_p.t2, psy.t2, mania.t2, conduct.t2, socanx.t2, att.t2, 
+                                                      som.t2, overeat.t2, ptrauma.t2, anthroweightcalc.t2, anthroheightcalc.t2),
+                           all.x = TRUE, all.y = FALSE, by = "src_subject_id") %>%
+    mutate(General_p_change = General_p.t2 - General_p.t1,
+          psy_change = psy.t2 - psy.t1,  
+          mania_change = mania.t2 - mania.t1,  
+          conduct_change = conduct.t2 - conduct.t1,  
+          socanx_change = socanx.t2 - socanx.t2, 
+          att_change = att.t2 - att.t1,  
+          som_change = som.t2 - som.t1,  
+          overeat_change = overeat.t2 - overeat.t1,  
+          ptrauma_change = ptrauma.t2 - ptrauma.t1)
+```
+
+## Add psychopathology change to t1 and t2 dfs for testing
+```{r}
+t1.full_test_df <- merge(t1.full_test_df, 
+                         long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
+                         by = "src_subject_id")
+t2.full_test_df <- merge(t2.full_test_df, 
+                         long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
+                         by = "src_subject_id")
+```
+
+## Define vectors for names of centile vars for all models
+```{r}
+names <- names(t1.full_test_df)[grep(".t1_centiles", names(t1.full_test_df))] %>% sub(".t1_centiles","",.)
+names.t1 <- paste0(names, ".t1_centiles")
+names.t2 <- paste0(names, ".t2_centiles")
+names.long <- paste0(names, ".long_centiles")
+```
+
+## Combine dataframes for centile-centile association analyses
+To look at centile scores of the same subject across models.
+```{r}
+full.df <- merge(t1.full_test_df %>% rename(age.t1 = age, site.t1 = site, General_p.t1 = General_p) %>%
+                   select(all_of(c("src_subject_id", "age.t1", "site.t1", "General_p.t1",
+                                   names.t1, names, "split_ID", "sex", "gestAge", 
+                                   "birth_weight_oz_sum_adj", "bw_pgs", "bweight_percentile", "neonatal_comp_total"))),
+                  t2.full_test_df %>% rename(age.t2 = age, site.t2 = site, General_p.t2 = General_p) %>%
+                   select(all_of(c("src_subject_id", "age.t2", "site.t2", "General_p.t2",
+                                   names.t2, names))),
+                 by = "src_subject_id", all.x = TRUE, suffixes = c(".t1",".t2"))
+
+#add longitudinal centiles
+full.df <- merge(full.df, 
+                 long.full_test_df %>% 
+                   select(all_of(c("src_subject_id", names.long, "interscan_months_t1t2", "General_p_change"))),
+                 by = "src_subject_id", all.x = TRUE)
+```
+
+##SES Variables
+###Load file
+```{r}
+abcd_demo_file <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/raw_tables_5.1/abcd_p_demo.csv"
+abcd_demo <- read.csv(abcd_demo_file)
+```
+
+###Change encoding of variables
+```{r}
+abcd_demo <- abcd_demo %>%
+  mutate(t1.income_label = case_when(
+    demo_comb_income_v2 == 1 ~ "Less than $5,000",
+    demo_comb_income_v2 == 2 ~ "$5,000 through $11,999",
+    demo_comb_income_v2 == 3 ~ "$12,000 through $15,999",
+    demo_comb_income_v2 == 4 ~ "$16,000 through $24,999",
+    demo_comb_income_v2 == 5 ~ "$25,000 through $34,999",
+    demo_comb_income_v2 == 6 ~ "$35,000 through $49,999",
+    demo_comb_income_v2 == 7 ~ "$50,000 through $74,999",
+    demo_comb_income_v2 == 8 ~ "$75,000 through $99,999",
+    demo_comb_income_v2 == 9 ~ "$100,000 through $199,999",
+    demo_comb_income_v2 == 10 ~ "$200,000 and greater",
+    demo_comb_income_v2 == 999 ~ "Don't know",
+    demo_comb_income_v2 == 777 ~ "Refuse to answer",
+    TRUE ~ as.character(demo_comb_income_v2)  # Default case, if none of the above match
+  ))
+
+abcd_demo <- abcd_demo %>%
+  mutate(t2.income_label = case_when(
+    demo_comb_income_v2_l == 1 ~ "Less than $5,000",
+    demo_comb_income_v2_l == 2 ~ "$5,000 through $11,999",
+    demo_comb_income_v2_l == 3 ~ "$12,000 through $15,999",
+    demo_comb_income_v2_l == 4 ~ "$16,000 through $24,999",
+    demo_comb_income_v2_l == 5 ~ "$25,000 through $34,999",
+    demo_comb_income_v2_l == 6 ~ "$35,000 through $49,999",
+    demo_comb_income_v2_l == 7 ~ "$50,000 through $74,999",
+    demo_comb_income_v2_l == 8 ~ "$75,000 through $99,999",
+    demo_comb_income_v2_l == 9 ~ "$100,000 through $199,999",
+    demo_comb_income_v2_l == 10 ~ "$200,000 and greater",
+    demo_comb_income_v2_l == 999 ~ "Don't know",
+    demo_comb_income_v2_l == 777 ~ "Refuse to answer",
+    TRUE ~ as.character(demo_comb_income_v2_l)  # Default case, if none of the above match
+  ))
+
+abcd_demo <- abcd_demo %>%
+  mutate(t1.prnt_edu_label = case_when(
+    demo_prnt_ed_v2 %in% c(0:12) ~ "Didn't complete highschool",
+    demo_prnt_ed_v2 %in% c(13,14) ~ "Completed highschool/GED",
+    demo_prnt_ed_v2 %in% c(15:17) ~ "Some college/Associate's",
+    demo_prnt_ed_v2 == 18 ~ "Bachelor's Degree",
+    demo_prnt_ed_v2 %in% c(19:21) ~ "Advanced Degree",
+    demo_prnt_ed_v2 == 999 ~ "Don't know",
+    demo_prnt_ed_v2 == 777 ~ "Refuse to answer",
+    TRUE ~ as.character(demo_prnt_ed_v2)  # Default case, if none of the above match
+  ))
+
+abcd_demo <- abcd_demo %>%
+  mutate(t2.prnt_edu_label = case_when(
+    demo_prnt_ed_v2_2yr_l %in% c(0:12) ~ "Didn't complete highschool",
+    demo_prnt_ed_v2_2yr_l %in% c(13,14) ~ "Completed highschool/GED",
+    demo_prnt_ed_v2_2yr_l %in% c(22,23,16,17) ~ "Some college/Associate's",
+    demo_prnt_ed_v2_2yr_l == 18 ~ "Bachelor's Degree",
+    demo_prnt_ed_v2_2yr_l %in% c(19:21) ~ "Advanced Degree",
+    demo_prnt_ed_v2_2yr_l == 999 ~ "Don't know",
+    demo_prnt_ed_v2_2yr_l == 777 ~ "Refuse to answer",
+    TRUE ~ as.character(demo_prnt_ed_v2_2yr_l)  # Default case, if none of the above match
+  ))
+```
+
+### Deal with NAs and Factor Ordering
+set "no response" to NA
+make the factors ordered
+```{r}
+abcd_demo$t1.income_label_NAs <- ifelse(abcd_demo$t1.income_label %in% c("Don't know", "Refuse to answer"), NA, abcd_demo$t1.income_label)
+abcd_demo$t2.income_label_NAs <- ifelse(abcd_demo$t2.income_label %in% c("Don't know", "Refuse to answer"), NA, abcd_demo$t2.income_label)
+
+abcd_demo$t1.prnt_edu_label_NAs <- ifelse(abcd_demo$t1.prnt_edu_label %in% c("Don't know", "Refuse to answer"), NA, abcd_demo$t1.prnt_edu_label)
+abcd_demo$t2.prnt_edu_label_NAs <- ifelse(abcd_demo$t2.prnt_edu_label %in% c("Don't know", "Refuse to answer"), NA, abcd_demo$t2.prnt_edu_label)
+
+t2.abcd_demo <- abcd_demo %>% filter(eventname == "2_year_follow_up_y_arm_1") %>%
+  filter(src_subject_id %in% full.df$src_subject_id)
+t1.abcd_demo <- abcd_demo %>% filter(eventname == "baseline_year_1_arm_1")%>%
+  filter(src_subject_id %in% full.df$src_subject_id)
+
+income_levels_order <- c("Less than $5,000","$5,000 through $11,999","$12,000 through $15,999", 
+  "$16,000 through $24,999","$25,000 through $34,999","$35,000 through $49,999",
+  "$50,000 through $74,999","$75,000 through $99,999","$100,000 through $199,999",
+  "$200,000 and greater")
+prnt_edu_levels_order <- c("Didn't complete highschool", "Completed highschool/GED", "Some college/Associate's", "Bachelor's Degree", "Advanced Degree")
+```
+
+### Add variables to data frames
+```{r}
+#Add Income Levels to full df and to t1 / t2 dfs. Set level orders for ordered factor
+##T1 Income
+t1.full_test_df <- merge(t1.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.income_label_NAs", "t1.income_label")) %>% rename(t1.income_ordered = t1.income_label_NAs, t1.income_label = t1.income_label), by = "src_subject_id", all.x = TRUE)
+t1.full_test_df$t1.income_ordered <- factor(t1.full_test_df$t1.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+t2.full_test_df <- merge(t2.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.income_label_NAs", "t1.income_label")) %>% rename(t1.income_ordered = t1.income_label_NAs), by = "src_subject_id", all.x = TRUE)
+t2.full_test_df$t1.income_ordered <- factor(t2.full_test_df$t1.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+long.full_test_df <- merge(long.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.income_label_NAs", "t1.income_label")) %>% rename(t1.income_ordered = t1.income_label_NAs), by = "src_subject_id", all.x = TRUE)
+long.full_test_df$t1.income_ordered <- factor(long.full_test_df$t1.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+##T2 Income
+t1.full_test_df <- merge(t1.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.income_label_NAs", "t2.income_label")) %>% rename(t2.income_ordered = t2.income_label_NAs), by = "src_subject_id", all.x = TRUE)
+t1.full_test_df$t2.income_ordered <- factor(t1.full_test_df$t2.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+t2.full_test_df <- merge(t2.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.income_label_NAs", "t2.income_label")) %>% rename(t2.income_ordered = t2.income_label_NAs, t2.income_label = t2.income_label), by = "src_subject_id", all.x = TRUE)
+t2.full_test_df$t2.income_ordered <- factor(t2.full_test_df$t2.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+long.full_test_df <- merge(long.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.income_label_NAs", "t2.income_label")) %>% rename(t2.income_ordered = t2.income_label_NAs), by = "src_subject_id", all.x = TRUE)
+long.full_test_df$t2.income_ordered <- factor(long.full_test_df$t2.income_ordered, levels = income_levels_order, ordered = TRUE)
+
+#Add Parent Education Levels to full df and to t1 / t2 dfs. Set level orders for ordered factor
+##T1 Parent Education
+t1.full_test_df <- merge(t1.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.prnt_edu_label_NAs", "t1.prnt_edu_label")) %>% rename(t1.prnt_edu_ordered = t1.prnt_edu_label_NAs, t1.prnt_edu_label = t1.prnt_edu_label), by = "src_subject_id", all.x = TRUE)
+t1.full_test_df$t1.prnt_edu_ordered <- factor(t1.full_test_df$t1.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+
+t2.full_test_df <- merge(t2.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.prnt_edu_label_NAs", "t1.prnt_edu_label")) %>% rename(t1.prnt_edu_ordered = t1.prnt_edu_label_NAs), by = "src_subject_id", all.x = TRUE)
+t2.full_test_df$t1.prnt_edu_ordered <- factor(t2.full_test_df$t1.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+
+long.full_test_df <- merge(long.full_test_df, t1.abcd_demo %>% select(c("src_subject_id", "t1.prnt_edu_label_NAs", "t1.prnt_edu_label")) %>% rename(t1.prnt_edu_ordered = t1.prnt_edu_label_NAs), by = "src_subject_id", all.x = TRUE)
+long.full_test_df$t1.prnt_edu_ordered <- factor(long.full_test_df$t1.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+
+##T2 Parent Education
+t1.full_test_df <- merge(t1.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.prnt_edu_label_NAs", "t2.prnt_edu_label")) %>% rename(t2.prnt_edu_ordered = t2.prnt_edu_label_NAs), by = "src_subject_id", all.x = TRUE)
+t1.full_test_df$t2.prnt_edu_ordered <- factor(t1.full_test_df$t2.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+
+t2.full_test_df <- merge(t2.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.prnt_edu_label_NAs", "t2.prnt_edu_label")) %>% rename(t2.prnt_edu_ordered = t2.prnt_edu_label_NAs, t2.prnt_edu_label = t2.prnt_edu_label), by = "src_subject_id", all.x = TRUE)
+t2.full_test_df$t2.prnt_edu_ordered <- factor(t2.full_test_df$t2.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+
+long.full_test_df <- merge(long.full_test_df, t2.abcd_demo %>% select(c("src_subject_id", "t2.prnt_edu_label_NAs", "t2.prnt_edu_label")) %>% rename(t2.prnt_edu_ordered = t2.prnt_edu_label_NAs), by = "src_subject_id", all.x = TRUE)
+long.full_test_df$t2.prnt_edu_ordered <- factor(long.full_test_df$t2.prnt_edu_ordered, levels = prnt_edu_levels_order, ordered = TRUE)
+```
+
+### Create a combo variable for income and parental education, using t1 if available and t2 if t1 is not available
+```{r}
+#T1
+t1.full_test_df$combo.income_ordered <- t1.full_test_df$t1.income_ordered
+t1.full_test_df$combo.income_ordered[is.na(t1.full_test_df$t1.income_ordered)] <- t1.full_test_df$t2.income_ordered[is.na(t1.full_test_df$t1.income_ordered)]
+
+t1.full_test_df$combo.prnt_edu_ordered <- t1.full_test_df$t1.prnt_edu_ordered
+t1.full_test_df$combo.prnt_edu_ordered[is.na(t1.full_test_df$t1.prnt_edu_ordered)] <- t1.full_test_df$t2.prnt_edu_ordered[is.na(t1.full_test_df$t1.prnt_edu_ordered)]
+
+#T2
+t2.full_test_df$combo.income_ordered <- t2.full_test_df$t1.income_ordered
+t2.full_test_df$combo.income_ordered[is.na(t2.full_test_df$t1.income_ordered)] <- t2.full_test_df$t2.income_ordered[is.na(t2.full_test_df$t1.income_ordered)]
+
+t2.full_test_df$combo.prnt_edu_ordered <- t2.full_test_df$t1.prnt_edu_ordered
+t2.full_test_df$combo.prnt_edu_ordered[is.na(t2.full_test_df$t1.prnt_edu_ordered)] <- t2.full_test_df$t2.prnt_edu_ordered[is.na(t2.full_test_df$t1.prnt_edu_ordered)]
+
+#LONG
+long.full_test_df$combo.income_ordered <- long.full_test_df$t1.income_ordered
+long.full_test_df$combo.income_ordered[is.na(long.full_test_df$t1.income_ordered)] <- long.full_test_df$t2.income_ordered[is.na(long.full_test_df$t1.income_ordered)]
+
+long.full_test_df$combo.prnt_edu_ordered <- long.full_test_df$t1.prnt_edu_ordered
+long.full_test_df$combo.prnt_edu_ordered[is.na(long.full_test_df$t1.prnt_edu_ordered)] <- long.full_test_df$t2.prnt_edu_ordered[is.na(long.full_test_df$t1.prnt_edu_ordered)]
+```
+
+# Make Table One and Supplementary Table
+by timepoint and split-half
+```{r}
+t1.full_test_df$table_group <- paste0(t1.full_test_df$matched_group, "_t1")
+t2.full_test_df$table_group <- paste0(t2.full_test_df$matched_group, "_t2")
+
+table_vars <- c("table_group", "age", "sex", "gestAge", "bw_pgs", "birth_weight_oz_sum_adj",
+"neonatal_comp_total", "General_p", "psy", "mania", "conduct", "socanx", "att", "som", "overeat", "ptrauma",
+"anthroweightcalc", "anthroheightcalc", "combo.income_ordered", "combo.prnt_edu_ordered")
+
+table1_df <- rbind(t1.full_test_df %>% select(all_of(table_vars)), 
+                   t2.full_test_df %>% select(all_of(table_vars))) %>%
+  mutate(age_years = age/12) %>%
+  mutate(bwpgs_zscore = as.numeric(scale(bw_pgs))) %>%
+  mutate(neonatal_comp_total = as.numeric(neonatal_comp_total)) %>%
+  mutate(table_group = factor(table_group, levels = c("1_t1", "2_t1", "1_t2", "2_t2"))) %>%
+  arrange(table_group)
+
+
+# Create Table 1 with additional variables
+table1 <- table1_df %>%
+  select(table_group, age_years, sex, gestAge, bwpgs_zscore, birth_weight_oz_sum_adj, neonatal_comp_total, General_p) %>%
+  tbl_summary(
+    by = table_group,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    digits = c(bwpgs_zscore, General_p) ~ function(x) format(x, digits = 3, scientific = TRUE),
+    missing = "always",
+    missing_stat = "{N_nonmiss}", 
+    missing_text = "N known"
+  ) %>%
+  bold_labels()
+
+# View Table
+table1
+
+table1_save <- as_tibble(table1)
+
+write.csv(table1_save, paste0(tableOne_folder, "Table_One_", Sys.Date(),".csv"))
+
+#Neonatal comp total is added as a categorical (I can't fix the function above to see it as continuous), want to include as a continuous -- calculate mean and SD manually here.
+table1_df %>%
+  select(c("table_group", "neonatal_comp_total")) %>%
+  group_by(table_group) %>%
+ summarise(mean_value = mean(neonatal_comp_total, na.rm = TRUE),
+    sd_value = sd(neonatal_comp_total, na.rm = TRUE))
+
+# Create Supplemental Table 1 with additional variables
+table1_sup <- table1_df %>%
+  select(table_group, anthroweightcalc, anthroheightcalc, combo.income_ordered, combo.prnt_edu_ordered, bw_pgs, neonatal_comp_total) %>%
+  tbl_summary(
+    by = table_group,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    digits = c(bw_pgs) ~ function(x) format(x, digits = 3, scientific = TRUE),
+    missing = "always",
+    missing_stat = "{N_nonmiss}", 
+    missing_text = "N known"
+  ) %>%
+  bold_labels()
+
+# View Table
+table1_sup
+
+table1_sup_save <- as_tibble(table1_sup)
+
+write.csv(table1_sup_save, paste0(tableOne_folder, "Table_One_Supplement_", Sys.Date(), ".csv"))
+```
+
+# Make Supplemental Table with psychopathology sub-factors
+```{r}
+table1_sup_psyfac <- table1_df %>%
+  select(table_group, psy, mania, conduct, socanx, att, som, overeat, ptrauma) %>%
+  tbl_summary(
+    by = table_group,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    missing = "always",
+    missing_stat = "{N_nonmiss}", 
+    missing_text = "N known"
+  ) %>%
+  bold_labels()
+
+# View Table
+table1_sup_psyfac
+
+table1_sup_psyfac_save <- as_tibble(table1_sup_psyfac)
+
+write.csv(table1_sup_psyfac_save, paste0(tableOne_folder, "Table_One_Supplement_PsyFac", Sys.Date(), ".csv"))
+```
+# Prep full.df with zscores
+## Set 0/1 centiles to min/max value to avoid Inf/-Inf
+numbers from gamlssTools pkg
+```{r}
+qnorm_vars <- c(names.t1, names.t2, names.long, "bweight_percentile")
+
+for (x in qnorm_vars){
+  full.df[full.df[,x] == 0 & !is.na(full.df[,x]), x] <- 0.0000000000000000000000001
+  full.df[full.df[,x] == 1 & !is.na(full.df[,x]), x] <- 0.99999999999999994
+}
+```
+
+## zscore centiles (new df)
+```{r, echo = FALSE}
+# zscore centiles and other variables of interest
+df.zscore <- full.df %>%
+  mutate(across(all_of(qnorm_vars), qnorm)) %>%
+  mutate(across(all_of(c("gestAge", "birth_weight_oz_sum_adj", "bw_pgs", "bweight_percentile", "neonatal_comp_total")), 
+                ~as.numeric(scale(.x))))
+
+# set sex as factor
+df.zscore$sex <- as.factor(df.zscore$sex)
+```
+
+# Load Global Phenotype Models
+##t1 global phenotype models
+```{r}
+#load saved fits
+t1.all_fits_filename <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/t1_BCT_fits.csv"
+t1.all_fits <- read.csv(t1.all_fits_filename) %>% select(-1) %>% filter(phenotype %in% c(global_phenotypes, "smri_vol_scs_wholeb"))
+t1.sOne_fits <- t1.all_fits %>% filter(split_no == 1)
+t1.sTwo_fits <- t1.all_fits %>% filter(split_no == 2)
+
+#Choose best fits based on lowest BIC
+t1.sOne_best <- t1.sOne_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+ slice_min(BIC, n = 1)
+
+t1.sTwo_best <- t1.sTwo_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+  slice_min(BIC, n = 1)
+
+#Load models for the best model for each phenotype
+t1.sOne_best_list <- paste0(splitOne_folder,"gamlssFIT_",t1.sOne_best$model_index,".rds")
+t1.best_models_One <- lapply(t1.sOne_best_list, readRDS)
+t1.sTwo_best_list <- paste0(splitTwo_folder,"gamlssFIT_",t1.sTwo_best$model_index,".rds")
+t1.best_models_Two <- lapply(t1.sTwo_best_list, readRDS)
+
+names(t1.best_models_One) <- t1.sOne_best$phenotype
+names(t1.best_models_Two) <- t1.sTwo_best$phenotype
+```
+##t2 global phenotype models
+```{r}
+#load saved fits
+t2.all_fits_filename <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/t2_BCT_fits.csv"
+t2.all_fits <- read.csv(t2.all_fits_filename) %>% select(-1) %>% filter(phenotype %in% c(global_phenotypes, "smri_vol_scs_wholeb"))
+t2.sOne_fits <- t2.all_fits %>% filter(split_no == 1)
+t2.sTwo_fits <- t2.all_fits %>% filter(split_no == 2)
+
+#Choose best fits based on lowest BIC
+t2.sOne_best <- t2.sOne_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+ slice_min(BIC, n = 1)
+
+t2.sTwo_best <- t2.sTwo_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+  slice_min(BIC, n = 1)
+
+#Load models for the best model for each phenotype
+t2.sOne_best_list <- paste0(t2.splitOne_folder,"gamlssFIT_",t2.sOne_best$model_index,".rds")
+t2.best_models_One <- lapply(t2.sOne_best_list, readRDS)
+t2.sTwo_best_list <- paste0(t2.splitTwo_folder,"gamlssFIT_",t2.sTwo_best$model_index,".rds")
+t2.best_models_Two <- lapply(t2.sTwo_best_list, readRDS)
+
+names(t2.best_models_One) <- t2.sOne_best$phenotype
+names(t2.best_models_Two) <- t2.sTwo_best$phenotype
+```
+##longitudinal global phenotype models
+```{r}
+global_t2 <- paste0(c(global_phenotypes, "smri_vol_scs_wholeb"), ".t2")
+#load saved fits
+long.all_fits_filename <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/2.0_results/long_fits.csv"
+long.all_fits <- read.csv(long.all_fits_filename) %>% select(-1) %>% filter(phenotype %in% global_t2)
+long.sOne_fits <- long.all_fits %>% filter(split_no == 1)
+long.sTwo_fits <- long.all_fits %>% filter(split_no == 2)
+
+#Choose best fits based on lowest BIC
+long.sOne_best <- long.sOne_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+ slice_min(BIC, n = 1)
+
+long.sTwo_best <- long.sTwo_fits %>%
+  filter(convergence_warn_end == 0) %>%
+  group_by(phenotype) %>%
+  slice_min(BIC, n = 1)
+
+#Load models for the best model for each phenotype
+long.sOne_best_list <- paste0(long.splitOne_folder,"gamlssFIT_",long.sOne_best$model_index,".rds")
+long.best_models_One <- lapply(long.sOne_best_list, readRDS)
+long.sTwo_best_list <- paste0(long.splitTwo_folder,"gamlssFIT_",long.sTwo_best$model_index,".rds")
+long.best_models_Two <- lapply(long.sTwo_best_list, readRDS)
+
+names(long.best_models_One) <- long.sOne_best$phenotype
+names(long.best_models_Two) <- long.sTwo_best$phenotype
+```
+<!-- # Prepare DFs for Analysis -->
+
+<!-- ## Set 0/1 centiles to min/max value to avoid Inf/-Inf -->
+<!-- numbers from gamlssTools pkg -->
+<!-- include weight/height centiles here later (when properly calculated and exported from arcus) -->
+<!-- ```{r} -->
+<!-- qnorm_vars <- c(names.t1, names.t2, names.long, "bweight_percentile") -->
+
+<!-- for (x in qnorm_vars){ -->
+<!--   full.df[full.df[,x] == 0 & !is.na(full.df[,x]), x] <- 0.0000000000000000000000001 -->
+<!--   full.df[full.df[,x] == 1 & !is.na(full.df[,x]), x] <- 0.99999999999999994 -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ## zscore centiles (new df) - ->
+<!-- ```{r, echo = FALSE} -->
+<!-- # zscore centiles and other variables of interest -->
+<!-- df.zscore <- full.df %>% -->
+<!--   mutate(across(all_of(qnorm_vars), qnorm)) %>% -->
+<!--   mutate(across(all_of(c("gestAge", "gestAge_38term", "gestAge_39term", "birth_weight_oz_sum_adj",  -->
+<!--                          "neonatal_comp_total", "bw_pgs", "ga_pgs",  -->
+<!--                          "PC1", "PC2", "PC3", "PC4", "PC5","PC6","PC6",  -->
+<!--                          "PC7", "PC7", "PC8", "PC9", "PC10", -->
+<!--                          "parental_education", "General_p.t1", "General_p.t2", "General_p_change", -->
+<!--                          "psy.t1", "psy.t2", "psy_change", "mania.t1", "mania.t2", "mania_change", -->
+<!--                          "conduct.t1", "conduct.t2", "conduct_change", "socanx.t1", "socanx.t2", -->
+<!--                          "socanx_change", "att.t1", "att.t2", "att_change", "som.t1", "som.t2", -->
+<!--                          "som_change", "overeat.t1", "overeat.t2", "overeat_change", "ptrauma.t1", -->
+<!--                          "ptrauma.t2", "ptrauma_change")),  -->
+<!--                 ~as.numeric(scale(.x)))) -->
+
+<!-- # set sex and preterm as factor -->
+<!-- df.zscore$sex <- as.factor(df.zscore$sex) -->
+<!-- df.zscore$preterm <- as.factor(df.zscore$preterm) -->
+
+<!-- # # zscore centiles and other variables of interest -->
+<!-- # df.zscore.t1 <- t1.full_test_df %>% -->
+<!-- #   mutate(across(all_of(c(names.t1, "bweight_percentile")), qnorm)) %>% -->
+<!-- #   mutate(across(all_of(c("gestAge", "birth_weight_oz_sum_adj",  -->
+<!-- #                          "neonatal_comp_total", "bw_pgs", "ga_pgs",  -->
+<!-- #                          "PC1", "PC2", "PC3", "PC4", "PC5","PC6","PC6",  -->
+<!-- #                          "PC7", "PC7", "PC8", "PC9", "PC10", -->
+<!-- #                          "parental_education", "General_p.t1", "General_p.t2", "General_p_change", -->
+<!-- #                          "psy.t1", "psy.t2", "psy_change", "mania.t1", "mania.t2", "mania_change", -->
+<!-- #                          "conduct.t1", "conduct.t2", "conduct_change", "socanx.t1", "socanx.t2", -->
+<!-- #                          "socanx_change", "att.t1", "att.t2", "att_change", "som.t1", "som.t2", -->
+<!-- #                          "som_change", "overeat.t1", "overeat.t2", "overeat_change", "ptrauma.t1", -->
+<!-- #                          "ptrauma.t2", "ptrauma_change")),  -->
+<!-- #                 ~as.numeric(scale(.x)))) -->
+<!-- #  -->
+<!-- # # set sex and preterm as factor -->
+<!-- # df.zscore.t1$sex <- as.factor(df.zscore.t1$sex) -->
+<!-- # df.zscore.t1$preterm <- as.factor(df.zscore.t1$preterm) -->
+
+<!-- # # zscore centiles and other variables of interest -->
+<!-- # df.zscore.long <- long.full_test_df %>% -->
+<!-- #   mutate(across(all_of(c(names.long, "bweight_percentile")), qnorm)) %>% -->
+<!-- #   mutate(across(all_of(c("gestAge", "birth_weight_oz_sum_adj",  -->
+<!-- #                          "neonatal_comp_total", "bw_pgs", -->
+<!-- #                          "PC1", "PC2", "PC3", "PC4", "PC5","PC6","PC6",  -->
+<!-- #                          "PC7", "PC7", "PC8", "PC9", "PC10", -->
+<!-- #                          "General_p.t1", "General_p.t2", "General_p_change", -->
+<!-- #                          "psy.t1", "psy.t2", "psy_change", "mania.t1", "mania.t2", "mania_change", -->
+<!-- #                          "conduct.t1", "conduct.t2", "conduct_change", "socanx.t1", "socanx.t2", -->
+<!-- #                          "socanx_change", "att.t1", "att.t2", "att_change", "som.t1", "som.t2", -->
+<!-- #                          "som_change", "overeat.t1", "overeat.t2", "overeat_change", "ptrauma.t1", -->
+<!-- #                          "ptrauma.t2", "ptrauma_change")),  -->
+<!-- #                 ~as.numeric(scale(.x)))) -->
+<!-- #  -->
+<!-- # # set sex and preterm as factor -->
+<!-- # df.zscore.long$sex <- as.factor(df.zscore.long$sex) -->
+<!-- # df.zscore.long$preterm <- as.factor(df.zscore.long$preterm) -->
+<!-- ``` -->
+
+<!-- ## find Inf cells, sanity check, should be none -->
+<!-- ```{r, echo = FALSE} -->
+<!-- inf_nan_table <- as.data.frame(t(sapply(df.zscore[c(qnorm_vars)], function(x){ -->
+<!--   c(inf = sum(is.infinite(x)), nan = sum(is.nan(x))) -->
+<!-- }))) -->
+<!-- max(inf_nan_table$inf) -->
+<!-- max(inf_nan_table$nan) -->
+
+<!-- inf_nan_table %>% filter(inf > 0) -->
+<!-- ``` -->
+
+<!-- ## Store non-normalized distribution stats to convert back for plots -->
+<!-- ```{r} -->
+<!-- stats <- full.df %>% -->
+<!--   dplyr::summarise(across(all_of(c("gestAge", "birth_weight_oz_sum_adj",  -->
+<!--                          "neonatal_comp_total", "bw_pgs", "ga_pgs",  -->
+<!--                          "PC1", "PC2", "PC3", "PC4", "PC5","PC6","PC6",  -->
+<!--                          "PC7", "PC7", "PC8", "PC9", "PC10", -->
+<!--                          "parental_education", "General_p.t1", "General_p.t2", "General_p_change", -->
+<!--                          "psy.t1", "psy.t2", "psy_change", "mania.t1", "mania.t2", "mania_change", -->
+<!--                          "conduct.t1", "conduct.t2", "conduct_change", "socanx.t1", "socanx.t2", -->
+<!--                          "socanx_change", "att.t1", "att.t2", "att_change", "som.t1", "som.t2", -->
+<!--                          "som_change", "overeat.t1", "overeat.t2", "overeat_change", "ptrauma.t1", -->
+<!--                          "ptrauma.t2", "ptrauma_change")), -->
+<!--                          list(mean = ~ mean(.x, na.rm = TRUE), -->
+<!--                               sd = ~ sd(.x, na.rm = TRUE)), -->
+<!--                          .names = "{.col}__{.fn}")) %>% -->
+<!--   pivot_longer(everything(), -->
+<!--                names_to = c("var", ".value"), -->
+<!--                names_pattern = "^(.*)__(mean|sd)$") -->
+
+<!-- mean_lookup <- setNames(stats$mean, stats$var) -->
+<!-- sd_lookup <- setNames(stats$sd, stats$var) -->
+<!-- ``` -->
+
+# BW - PGSBW corr
+```{r}
+cor.test(full.df$birth_weight_oz_sum_adj, full.df$bw_pgs)
+```
+# Birth Factors ~ P-factor corr
+
+## General P factor
+```{r}
+cor_mat <- cor(full.df[,c("gestAge", "birth_weight_oz_sum_adj", "bw_pgs", "neonatal_comp_total", "General_p.t1", "General_p.t2", "General_p_change")], use = "pairwise.complete.obs")
+
+p_mat <- cor_pmat(full.df[,c("gestAge", "birth_weight_oz_sum_adj", "bw_pgs", "neonatal_comp_total", "General_p.t1", "General_p.t2", "General_p_change")], use = "pairwise.complete.obs")
+
+(bf_gp_corr_plot <- ggcorrplot(
+  cor_mat,
+  p.mat = p_mat,
+  insig = "blank",
+  lab = TRUE
+))
+
+if(save_figures == TRUE){
+panel_save(bf_gp_corr_plot, "bf-gp-cor-matrix", "svg", extra_panels_folder)
+}
+```
+
+#Centiles Across Models
+## Plot centiles against each other & calculate correlations for each phenotype
+```{r}
+length_names <- length(grep(".t1_centiles", names(full.df)))
+#Ensure all names are in the same order
+names <- names(full.df)[grep(".t1_centiles", names(full.df))] %>% sub(".t1_centiles","",.)
+names.t1 <- paste0(names, ".t1_centiles")
+names.t2 <- paste0(names, ".t2_centiles")
+names.long <- paste0(names, ".long_centiles")
+plots <- vector(mode = "list", length = length_names)
+plots.long <- vector(mode = "list", length = length_names)
+plots.t2 <- vector(mode = "list", length = length_names)
+plots.t1 <- vector(mode = "list", length = length_names)
+plots.t1_diff <- vector(mode = "list", length = length_names)
+df <- data.frame(matrix(ncol = 4, nrow = dim(full.df)[1]))
+colnames(df) <- c("t1.vector", "t2.vector", "diff.vector", "long.vector")
+cor_df <- data.frame(matrix(ncol = 13, nrow = length_names))
+colnames(cor_df) <- c("t1_t2.cor", "t1_t2.p", "t1_t2.p_adj", "t1_long.cor", "t1_long.p", "t1_long.p_adj","t2_long.cor", "t2_long.p", "t2_long.p_adj", "t1_diff.cor", "t1_diff.p", "t1_diff.p_adj",
+                      "label")
+for(i in 1:length_names){
+  df$t1.vector.qnorm <- df.zscore[,names.t1[i]]
+  df$t1.vector <- full.df[,names.t1[i]]
+  df$t2.vector.qnorm <- df.zscore[,names.t2[i]]
+  df$t2.vector <- full.df[,names.t2[i]]
+  col_name <- paste0(names[i], ".diff")
+  full.df[[col_name]] <- df$t2.vector-df$t1.vector
+  col_name_qnorm <- paste0(names[i], ".diff.qnorm")
+  df.zscore[[col_name_qnorm]] <- df$t2.vector.qnorm-df$t1.vector.qnorm
+  df$diff.vector <- df$t2.vector-df$t1.vector
+  df$diff.vector.qnorm <- df$t2.vector.qnorm-df$t1.vector.qnorm
+  df$long.vector.qnorm <- df.zscore[,names.long[i]]
+  df$long.vector <- full.df[,names.long[i]]
+  title <-  as.character(name_mapping$region_name[match(names[i],  name_mapping$abbreviation)])
+  plots[[i]] <- ggplot(data = df, mapping = aes(x = t1.vector, y = t2.vector, color = long.vector)) + geom_point(aes(alpha = 0.5)) + ggtitle(title)
+  names(plots)[i] <- title
+  plots.long[[i]]<- ggplot(data = df, mapping = aes(x = diff.vector, y = long.vector, color = t1.vector)) + geom_point(aes(alpha = 0.3)) + ggtitle(title) + xlab("t2-t1 centiles")
+  names(plots.long)[i] <- title
+  plots.t2[[i]]<- ggplot(data = df, mapping = aes(x = t2.vector, y = long.vector, color = t1.vector)) + geom_point(aes(alpha = 0.3)) + ggtitle(title)
+  names(plots.t2)[i] <- title
+  plots.t1[[i]]<- ggplot(data = df, mapping = aes(x = t1.vector, y = long.vector, color = t2.vector)) + geom_point(aes(alpha = 0.3)) + ggtitle(title)
+  names(plots.t1)[i] <- title
+  plots.t1_diff[[i]]<- ggplot(data = df, mapping = aes(x = diff.vector, y = t1.vector)) + geom_point(aes(alpha = 0.3)) + ggtitle(title)
+  names(plots.t1_diff)[i] <- title
+  #Correlations between centile scores
+  t1_t2.cor_test <- cor.test(df$t1.vector.qnorm, df$t2.vector.qnorm)
+  t1_long.cor_test <- cor.test(df$t1.vector.qnorm, df$long.vector.qnorm)
+  t2_long.cor_test <- cor.test(df$t2.vector.qnorm, df$long.vector.qnorm)
+  t1_diff.cor_test <- cor.test(df$t1.vector.qnorm, df$diff.vector.qnorm)
+  cor_df$label[i] <- title
+  cor_df$t1_t2.cor[i] <- t1_t2.cor_test$estimate
+  cor_df$t1_t2.p[i] <- t1_t2.cor_test$p.value
+  cor_df$t1_long.cor[i] <- t1_long.cor_test$estimate
+  cor_df$t1_long.p[i] <- t1_long.cor_test$p.value
+  cor_df$t2_long.cor[i] <- t2_long.cor_test$estimate
+  cor_df$t2_long.p[i] <- t2_long.cor_test$p.value
+  cor_df$t1_diff.cor[i] <- t1_diff.cor_test$estimate
+  cor_df$t1_diff.p[i] <- t1_diff.cor_test$p.value
+}
+
+cor_df$t1_t2.p_adj <- p.adjust(cor_df$t1_t2.p, method = "BH")
+cor_df$t1_diff.p_adj <- p.adjust(cor_df$t1_diff.p, method = "BH")
+cor_df$t1_long.p_adj <- p.adjust(cor_df$t1_long.p, method = "BH")
+cor_df$t2_long.p_adj <- p.adjust(cor_df$t2_long.p, method = "BH")
+
+
+print(paste0("Correlation Coef Range t1-t2 centiles: ", range(cor_df[cor_df$t1_t2.p_adj < 0.05,]$t1_t2.cor)))
+print(paste0("Correlation Coef Range t1-(t2-t1 diff) centiles ", range(cor_df[cor_df$t1_diff.p_adj < 0.05,]$t1_diff.cor)))
+print(paste0("Correlation Coef Range t1-long centiles: ", range(cor_df[cor_df$t1_long.p_adj < 0.05,]$t1_long.cor)))
+print(paste0("Correlation Coef Range t2-long centiles: ", range(cor_df[cor_df$t2_long.p_adj < 0.05,]$t2_long.cor)))
+```
+
+## Plots showing centile relationships for total cortical GMV
+```{r}
+# pheno <- cor_df %>% filter(t1_diff.cor == min(cor_df$t1_diff.cor)) %>% pull(label)
+# pheno_var_name <- name_mapping[name_mapping$region_name == pheno, "abbreviation"]
+
+cor.test(df.zscore$smri_vol_cdk_total.t1_centiles, df.zscore$smri_vol_cdk_total.diff.qnorm)
+cor.test(full.df$smri_vol_cdk_total.t1_centiles, full.df$smri_vol_cdk_total.diff)
+
+totalgray_t1_diff_qnorm_plot <- ggplot(data = df.zscore, mapping = aes(x = smri_vol_cdk_total.diff.qnorm, y = smri_vol_cdk_total.t1_centiles)) +  
+  geom_point(alpha = 0.25, color = "#81888F") + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor(
+    label.x = 0.08,
+  label.y = 0.9) +
+  theme_classic() +
+  labs(x = "T2 Centile (qnorm) - T1 Centile (qnorm)", y = "T1 Centile (qnorm)", title = "Total Cerebral Cortex") +
+  theme(plot.title =  element_text(hjust = 0.5),
+        text = element_text(size = 24))
+
+totalgray_t1_long_qnorm_plot <- ggplot(data = df.zscore, mapping = aes(x = smri_vol_cdk_total.long_centiles, y = smri_vol_cdk_total.t1_centiles)) +  
+  geom_point(alpha = 0.25, color = "#81888F") + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor(
+    label.x = 0.08,
+  label.y = 0.9) +
+  theme_classic() +
+  labs(x = "Longitudinal Centile (qnorm)", y = "T1 Centile (qnorm)", title = "Total Cerebral Cortex") +
+  theme(plot.title =  element_text(hjust = 0.5),
+        text = element_text(size = 24))
+
+totalgray_t1_diff_longcolor_qnorm_plot <- ggplot(data = df.zscore, 
+                                                 mapping = aes(x = smri_vol_cdk_total.diff.qnorm, y = smri_vol_cdk_total.t1_centiles,
+                                                                                 color = smri_vol_cdk_total.long_centiles)) +  
+  geom_point(alpha = 0.25) + 
+  scale_color_gradient2(  low = "#2C4A9A", mid = "#7C6B4F", high = "#D98E04", name = "Longitudinal Centile (qnorm)") +
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor(
+    label.x = 0.08,
+  label.y = 0.9) +
+  theme_classic() +
+  labs(x = "T2 Centile (qnorm) - T1 Centile (qnorm)", y = "T1 Centile (qnorm)", title = "Total Cerebral Cortex") +
+  theme(plot.title =  element_text(hjust = 0.5),
+        text = element_text(size = 24),
+        legend.position = "bottom")
+
+totalgray_t1_long_diffcolor_qnorm_plot <- ggplot(data = df.zscore, 
+                                                 mapping = aes(x = smri_vol_cdk_total.long_centiles, y = smri_vol_cdk_total.t1_centiles,
+                                                               color = smri_vol_cdk_total.diff.qnorm)) +  
+  scale_color_gradient2(low = "#2C4A9A", mid = "#7C6B4F", high = "#D98E04", name = "T2 Centile (qnorm) - T1 Centile (qnorm)") +
+  geom_point(alpha = 0.25) + 
+  geom_smooth(method = "lm") +
+  ggpubr::stat_cor(
+    label.x = 0.08,
+  label.y = 0.9) +
+  theme_classic() +
+  labs(x = "Longitudinal Centile (qnorm)", y = "T1 Centile (qnorm)", title = "Total Cerebral Cortex") +
+  theme(plot.title =  element_text(hjust = 0.5),
+        text = element_text(size = 24),
+        legend.position = "bottom")
+
+#Save the panels
+if(save_figures == TRUE){
+ggsave(plot = totalgray_t1_diff_qnorm_plot, filename=paste0(revisions_panels_folder,'totalgray_t1_diff_qnorm.svg'), dpi=300, width=16, height=14, device = "svg")
+ggsave(plot = totalgray_t1_long_qnorm_plot, filename=paste0(revisions_panels_folder,'totalgray_t1_long_qnorm.svg'), dpi=300, width=16, height=14, device = "svg")
+ggsave(plot = totalgray_t1_diff_longcolor_qnorm_plot, filename=paste0(revisions_panels_folder,'totalgray_t1_diff_longcolor_qnorm.svg'), dpi=300, width=16, height=14, device = "svg")
+ggsave(plot = totalgray_t1_long_diffcolor_qnorm_plot, filename=paste0(revisions_panels_folder,'totalgray_t1_long_diffcolor_qnorm.svg'), dpi=300, width=16, height=14, device = "svg")
+}
+```
+
+## Plot Correlations between centile scores on surface maps
+```{r}
+###plot
+#T1-T2
+#merge with atlas data
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t1_t2.p_adj < 0.05), ggseg::aseg, by = "label")
+
+#Setting manual limits (could match the colorbar limits between different variables)
+(t1.t2_cor_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = t1_t2.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void()+
+  labs(title = "T1-T2 cor"))
+
+(t1.t2_cor_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = t1_t2.cor)) +
+  scale_fill_gradient2(low = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void() +
+  labs(title = "T1-T2 cor"))
+
+if(save_figures == TRUE){
+panel_save(t1.t2_cor_dkt_plot, "t1_t2_dsk", "svg", figure_panels_folder)
+panel_save(t1.t2_cor_aseg_plot, "t1_t2_aseg", "svg", figure_panels_folder)
+}
+#t1-long
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t1_long.p_adj < 0.05), ggseg::aseg, by = "label")
+
+(t1.long_cor_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = t1_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void()+
+  labs(title = "T1-Long Cor"))
+
+(t1.long_cor_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = t1_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",limits = c(-1, 1)) +
+  theme_void() +
+  labs(title = "T1-Long Cor"))
+
+if(save_figures == TRUE){
+panel_save(t1.long_cor_dkt_plot, "t1_long_dsk", "svg", figure_panels_folder)
+panel_save(t1.long_cor_aseg_plot, "t1_long_aseg", "svg", figure_panels_folder)
+}
+
+#t1-diff
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t1_diff.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t1_diff.p_adj < 0.05), ggseg::aseg, by = "label")
+
+(t1.diff_cor_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = t1_diff.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void()+
+  labs(title = "T1-Diff Cor"))
+
+(t1.diff_cor_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = t1_diff.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",limits = c(-1, 1)) +
+  theme_void() +
+  labs(title = "T1-Diff Cor"))
+
+if(save_figures == TRUE){
+panel_save(t1.diff_cor_dkt_plot, "t1_diff_dsk", "svg", revisions_panels_folder)
+panel_save(t1.diff_cor_aseg_plot, "t1_diff_aseg", "svg", revisions_panels_folder)
+}
+
+#T2-Long
+#merge with atlas data only regions that are significant in correlation
+plot_data_dkt <- merge(cor_df %>% filter(t2_long.p_adj < 0.05), ggseg::dk, by = "label")
+plot_data_aseg <- merge(cor_df %>% filter(t2_long.p_adj < 0.05), ggseg::aseg, by = "label")
+
+#Setting manual limits (could match the colorbar limits between different variables)
+(t2.long_cor_dkt_plot <- ggplot(plot_data_dkt) +
+  geom_brain(atlas = dk, 
+             position = position_brain(hemi ~ side),
+             aes(fill = t2_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F", limits = c(-1, 1)) +
+  theme_void()+
+  labs(title = "T2-Long Cor"))
+
+(t2.long_cor_aseg_plot <- ggplot(plot_data_aseg) +
+  geom_brain(atlas = aseg,
+             aes(fill = t2_long.cor)) +
+  scale_fill_gradient2(low = "#4878CF", mid = "white", high = "#D65F5F",limits = c(-1, 1)) +
+  theme_void() +
+  labs(title = "T2-Long Cor"))
+
+if(save_figures == TRUE){
+panel_save(t2.long_cor_dkt_plot, "t2_long_dsk", "svg", figure_panels_folder)
+panel_save(t2.long_cor_aseg_plot, "t2_long_aseg", "svg", figure_panels_folder)
+}
+```
+# CMD-Centile Mahalanobis Distance - on centiles as is (not qnormed)
+
+## Calculate CMD
+```{r}
+length_names <- length(grep(".t1_centiles", names(full.df)))
+#Ensure all names are in the same order
+names <- names(full.df)[grep(".t1_centiles", names(full.df))] %>% sub(".t1_centiles","",.)
+names.t1 <- paste0(names, ".t1_centiles")
+names.t2 <- paste0(names, ".t2_centiles")
+names.long <- paste0(names, ".long_centiles")
+df_var <- data.frame(matrix(ncol = 4, nrow = dim(full.df)[1]))
+colnames(df_var) <- c("t1.variance", "t2.variance", "long.variance", "subject_id")
+#CMD Calculation
+##T1
+t1.center <- colMeans(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t1_centiles"))))
+t1.cov_matrix <- cov(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t1_centiles"))))
+t1.md <- sqrt(mahalanobis(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t1_centiles"))), t1.center, t1.cov_matrix))
+full.df$t1.cmd <- t1.md
+##T2
+t2.center <- colMeans(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t2_centiles"))), na.rm = TRUE)
+t2.cov_matrix <- cov(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t2_centiles"))), use = "complete.obs")
+t2.md <- sqrt(mahalanobis(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".t2_centiles"))), t2.center, t2.cov_matrix))
+full.df$t2.cmd <- t2.md
+##long
+long.center <- colMeans(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".long_centiles"))), na.rm = TRUE)
+long.cov_matrix <- cov(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".long_centiles"))), use = "complete.obs")
+long.md <- sqrt(mahalanobis(full.df %>% select(all_of(paste0(phenotypes_for_MC, ".long_centiles"))), long.center, long.cov_matrix))
+full.df$long.cmd <- long.md
+
+#remove outliers as defined by >5 sd from the mean
+test.df <- full.df %>% filter(t1.cmd < mean(full.df$t1.cmd) + 10*sd(full.df$t1.cmd))
+
+#correlations between CMDs across three centiles
+cor.test(test.df$t1.cmd, test.df$t2.cmd)
+cor.test(test.df$t1.cmd, test.df$long.cmd)
+cor.test(test.df$t2.cmd, test.df$long.cmd)
+
+#Plots for CMD correlations
+(t1_t2_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = t2.cmd)) + 
+  geom_point(alpha = 0.3, color = "gray") + 
+  geom_smooth(method = "lm", se = FALSE, color = "magenta") +
+  theme_minimal() + labs (x = "Timepoint 1 CMD", y = "Timepoint 2 CMD") +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
+
+(t1_long_cmd <- ggplot(data = test.df, mapping = aes(x = t1.cmd, y = long.cmd)) + 
+  geom_point(alpha = 0.3, color = "gray") + 
+  geom_smooth(method = "lm", se = FALSE, color = "magenta") +
+  theme_minimal() + labs (x = "Timepoint 1 CMD", y = "Conditional-Longitudinal CMD") +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
+
+
+(t2_long_cmd <- ggplot(data = test.df, mapping = aes(x = t2.cmd, y = long.cmd)) + 
+  geom_point(alpha = 0.3, color = "gray") + 
+  geom_smooth(method = "lm", se = FALSE, color = "magenta") +
+  theme_minimal()  + labs (x = "Timepoint 2 CMD", y = "Conditional-Longitudinal CMD")+
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18)))
+
+
+if(save_figures == TRUE){
+ggsave(plot=t1_t2_cmd, filename=paste0(figure_panels_folder,'t1_t2_cmd_plot.svg'), dpi=300, width=12, height=8)
+ggsave(plot=t1_long_cmd, filename=paste0(figure_panels_folder,'t1_long_cmd_plot.svg'), dpi=300, width=12, height=8)
+ggsave(plot=t2_long_cmd, filename=paste0(figure_panels_folder,'t2_long_cmd_plot.svg'), dpi=300, width=12, height=8)
+}
+```
+
+## CMD Correlations with variables of interest
+```{r}
+cor_mat <- cor(full.df[,c("gestAge", "birth_weight_oz_sum_adj", "bw_pgs", "neonatal_comp_total", "General_p.t1", "General_p.t2", "General_p_change", "t1.cmd", "t2.cmd", "long.cmd")], use = "pairwise.complete.obs")
+
+p_mat <- cor_pmat(full.df[,c("gestAge", "birth_weight_oz_sum_adj", "bw_pgs", "neonatal_comp_total", "General_p.t1", "General_p.t2", "General_p_change", "t1.cmd", "t2.cmd", "long.cmd")], use = "pairwise.complete.obs")
+
+(cmd_vars_corr_plot <- ggcorrplot(
+  cor_mat,
+  p.mat = p_mat,
+  type = "lower",
+  insig = "blank",
+  lab = TRUE
+))
+
+if(save_figures == TRUE){
+panel_save(cmd_vars_corr_plot, "cmd-vars-cor-matrix", "svg", extra_panels_folder)
+}
+```
+
+# Plots for Fig 1
+## Choose individuals to plot
+sex == M, site == site20
+NDAR_INV0HH094Z9   M  site20                        0.9367265                      0.9669537                      0.9848603
+ NDAR_INVZ04GJXZA   M  site20                        0.5373170                    0.136125660                    0.161806622
+ NDAR_INVY0M8DA4H   M  site20                       0.13186969                      0.4087228                      0.3367802
+```{r}
+# find three individuals with same sex and site with different t1 centiles
+full.df %>% filter(smri_vol_cdk_total.t1_centiles > 0.9 & smri_vol_cdk_total.t2_centiles < smri_vol_cdk_total.t1_centiles & sex == "M" & site.t1 == "site20") %>%
+  select(c(src_subject_id, sex, site.t1, smri_vol_cdk_total.long_centiles, smri_vol_cdk_total.t1_centiles, smri_vol_cdk_total.t2_centiles))
+
+full.df %>% filter(smri_vol_cdk_total.t1_centiles < 0.15 & smri_vol_cdk_total.t2_centiles > smri_vol_cdk_total.t1_centiles & sex == "M" & site.t1 == "site20") %>%
+  select(c(src_subject_id, sex, site.t1, smri_vol_cdk_total.long_centiles, smri_vol_cdk_total.t1_centiles, smri_vol_cdk_total.t2_centiles))
+
+full.df %>% filter(smri_vol_cdk_total.t1_centiles < 0.6 & smri_vol_cdk_total.t1_centiles > 0.4 & smri_vol_cdk_total.t2_centiles > smri_vol_cdk_total.t1_centiles & sex == "M" & site.t1 == "site20") %>%
+  select(c(src_subject_id, sex, site.t1, smri_vol_cdk_total.long_centiles, smri_vol_cdk_total.t1_centiles, smri_vol_cdk_total.t2_centiles))
+
+full.df %>% filter(smri_vol_cdk_total.t1_centiles < 0.6 & smri_vol_cdk_total.t1_centiles > 0.4 & smri_vol_cdk_total.t2_centiles < smri_vol_cdk_total.t1_centiles & sex == "M" & site.t1 == "site20") %>%
+  select(c(src_subject_id, sex, site.t1, smri_vol_cdk_total.long_centiles, smri_vol_cdk_total.t1_centiles, smri_vol_cdk_total.t2_centiles))
+```
+
+## plot all subjects together for both t1 and t2
+```{r}
+##specify subjects
+subjects <- c("NDAR_INV0HH094Z9" , "NDAR_INVZ04GJXZA", "NDAR_INVY0M8DA4H")
+colors <- c("#5B8FD1", "#3AA17E", "#D48672")
+subject_df <- full.df %>% filter(src_subject_id %in% subjects) %>% 
+  select("smri_vol_cdk_total.t1", "age.t1", "sex", "site.t1", "src_subject_id", "interscan_months_t1t2",
+         "smri_vol_cdk_total.t2", "age.t2", "site.t2", 
+         "smri_vol_cdk_total.t1_centiles", "smri_vol_cdk_total.t2_centiles",
+         "smri_vol_cdk_total.long_centiles", "split_ID") %>%
+  mutate(color = colors)
+
+
+sim.df.t1 <- tibble(sex = "M", site = "site20", age = seq(from = min(t1.sOne_train_df$age), 
+                                          to = max(t1.sOne_train_df$age),
+                                          length.out = 100))
+sim.df.t2 <- tibble(sex = "M", site = "site20", age = seq(from = min(t2.sOne_train_df$age), 
+                                          to = max(t2.sOne_train_df$age),
+                                          length.out = 100))
+
+### PLOT T1 Centiles ###
+model <- t1.best_models_One$smri_vol_cdk_total
+t1_cent_plot <- make_centile_fan(model, t1.sOne_train_df, "age", show_points=FALSE, 
+                                 color_manual="#5E6673", average_over = FALSE, 
+                                 sim_data_list = list(sim = sim.df.t1),
+                                 desiredCentiles = c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95),
+                                 label_centiles = FALSE) + 
+   scale_x_continuous(
+   breaks = seq(96, 144, by = 12),
+   labels = as.character(seq(8, 12, by = 1)),    
+   limits = c(105,133)              
+  ) +
+  scale_y_continuous(breaks = seq(450000, 800000, by=50000),
+                     labels = \(y) {round(y/(10^5), 2)},
+                     limits = c(450000, 780000) ) +
+  geom_point(data = subject_df, aes(x = age.t1, y = smri_vol_cdk_total.t1), color = colors, shape = 16, size = 5, stroke = 1) +
+  geom_text(data = subject_df, aes(x = age.t1, y = smri_vol_cdk_total.t1, 
+                                 label = glue("{signif(smri_vol_cdk_total.t1_centiles, digits = 2)*100}%"),
+                                 color = colors),
+            vjust = -1) +
+  scale_color_identity() +
+  labs(x = "Age (Years) ", 
+       y = expression("Total Gray Matter (" * 10^5 * " " * mm^3 * ")"), 
+       title = "") + 
+  theme_classic(base_size = 24) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.line.x = element_line(color = 'lightgrey'),
+    axis.line.y = element_blank()
+    )
+
+### PLOT T2 Centiles ###
+model <- t2.best_models_One$smri_vol_cdk_total
+t2_cent_plot <- make_centile_fan(model, t2.sOne_train_df, "age", show_points=FALSE, 
+                                 color_manual="#5E6673", average_over = FALSE, 
+                                 sim_data_list = list(sim = sim.df.t2),
+                                 desiredCentiles = c(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)) + 
+  scale_x_continuous(
+   breaks = seq(120, 168, by = 12),
+   labels = as.character(seq(10, 14, by = 1)), 
+   limits = c(125,167)
+  ) +
+  scale_y_continuous(breaks = seq(450000, 800000, by=50000),
+                     labels = \(y) {round(y/(10^5), 2)},
+                     limits = c(450000, 780000) ) +
+  geom_point(data = subject_df, aes(x = age.t2, y = smri_vol_cdk_total.t2), color = colors, shape = 16, size = 5, stroke = 1) +
+  geom_text(data = subject_df, aes(x = age.t2, y = smri_vol_cdk_total.t2, 
+                                 label = glue("{signif(smri_vol_cdk_total.t2_centiles, digits = 2)*100}%"),
+                                 color = colors),
+            vjust = -1) +
+  scale_color_identity() +
+  labs(x = "Age (Years) ", 
+       y = expression("Total Gray Matter (" * 10^5 * " " * mm^3 * ")"), 
+       title = "") + 
+  theme_classic(base_size = 24) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.line.x = element_line(color = 'lightgrey'),
+    axis.line.y = element_blank()
+    )
+
+
+t1_cent_plot
+t2_cent_plot
+
+# #Save the panels
+if(save_figures == TRUE){
+ggsave(plot=t1_cent_plot, filename=paste0(revisions_panels_folder,'t1_centplot.svg'), dpi=300, width=16, height=14, device = "svg")
+ggsave(plot=t2_cent_plot, filename=paste0(revisions_panels_folder,'t2_centplot.svg'), dpi=300, width=16, height=14, device = "svg")
+}
+```
+
+## longitudinal sim for above subjects
+```{r}
+all_long_cent_plot <- long_centile_sim(t1_model = t1.best_models_One$smri_vol_cdk_total,
+                                   t2_model = t2.best_models_One$smri_vol_cdk_total,
+                                   long_model = long.best_models_One$smri_vol_cdk_total,
+                                   t1_og_df = t1.sOne_train_df,
+                                   t2_og_df = t2.sOne_train_df,
+                                   long_og_df = long.sOne_train_df,
+                                   phenotype = "smri_vol_cdk_total",
+                                   phenotype_title = "Total Cortical GMV",
+                                   t1_centiles = subject_df$smri_vol_cdk_total.t1_centiles,
+                                   sex = subject_df$sex,
+                                   site = subject_df$site.t1,
+                                   age.t1 = subject_df$age.t1,
+                                   interscan_interval = subject_df$interscan_months_t1t2,
+                                   plot_colors = subject_df$color,
+                                   qnorm_plot = TRUE,
+                                   true_long_centile = subject_df$smri_vol_cdk_total.long_centiles
+                                   )
+
+all_long_cent_plot
+
+all_long_cent_plot_widelimits <- all_long_cent_plot + ylim(-5, 5)
+
+if(save_figures == TRUE){
+ggsave(plot=all_long_cent_plot, filename=paste0(revisions_panels_folder,'fig1_long_cent_plot.svg'), dpi=300, width=10, height=16, device = "svg")
+ggsave(plot=all_long_cent_plot_widelimits, filename=paste0(revisions_panels_folder,'fig1_long_cent_plot_widelimits.svg'), dpi=300, width=10, height=16, device = "svg")
+}
+```
+
+## longitudinal sim for a set of hypothetical subjects
+```{r}
+supp_all_long_cent_plot <- long_centile_sim(t1_model = t1.best_models_One$smri_vol_cdk_total,
+                                   t2_model = t2.best_models_One$smri_vol_cdk_total,
+                                   long_model = long.best_models_One$smri_vol_cdk_total,
+                                   t1_og_df = t1.sOne_train_df,
+                                   t2_og_df = t2.sOne_train_df,
+                                   long_og_df = long.sOne_train_df,
+                                   phenotype = "smri_vol_cdk_total",
+                                   phenotype_title = "Total Cortical GMV",
+                                   t1_centiles = c(0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99),
+                                   sex = "M",
+                                   site = "site16",
+                                   age.t1 = 12*9,
+                                   interscan_interval = 24,
+                                   plot_colors = c(
+  "#1F4E79", # deep steel blue
+  "#2E6F95", # muted ocean blue
+  "#4C8DAE", # slate teal-blue
+  "#6BA8A9", # dusty teal
+  "#8CBF88", # muted sage green
+  "#B5C46A", # olive-lime
+  "#D9B44A"  # muted golden amber
+),
+                                   qnorm_plot = TRUE
+                                   )
+
+supp_all_long_cent_plot
+
+supp_all_long_cent_plot_widelimits <- supp_all_long_cent_plot + ylim(-5, 5)
+
+
+if(save_figures == TRUE){
+ggsave(plot=supp_all_long_cent_plot, filename=paste0(revisions_panels_folder,'supfig1_long_cent_plot.svg'), dpi=300, width=10, height=16, device = "svg")
+ggsave(plot=supp_all_long_cent_plot_widelimits, filename=paste0(revisions_panels_folder,'supfig1_long_cent_plot_widelimits.svg'), dpi=300, width=10, height=16, device = "svg")
+}
+```
+
+#Save scale images
+### -0.23 to 0.23
+```{r}
+# Create dummy data just to generate the colorbar
+df <- data.frame(x = 1, y = 1, beta = 0)
+
+beta_scale <- ggplot(df, aes(x, y, fill = beta)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "#4878CF",
+    mid = "white",
+    high = "#D65F5F",
+    midpoint = 0,
+    limits = c(-0.23, 0.23),
+    guide = guide_colorbar(
+      barwidth = 1,   # length of colorbar
+      barheight = 20    # thickness
+    )
+  ) +
+  theme_void() +  # remove axes, grid, etc.
+  theme(
+    legend.position = "right",
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 16)
+  )
+beta_scale
+filename <- paste0(figures_grids_folder, "beta_scale.pdf")
+ggsave(filename, beta_scale)
+```
+### -1 to 1
+```{r}
+# Create dummy data just to generate the colorbar
+df <- data.frame(x = 1, y = 1, corr = 0)
+
+cor_scale <- ggplot(df, aes(x, y, fill = corr)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "#4878CF",
+    mid = "white",
+    high = "#D65F5F",
+    midpoint = 0,
+    limits = c(-1, 1),
+    guide = guide_colorbar(
+      barwidth = 20,   # length of colorbar
+      barheight = 1    # thickness
+    )
+  ) +
+  theme_void() +  # remove axes, grid, etc.
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14)
+  )
+cor_scale
+filename <- paste0(figures_grids_folder, "cor_scale.pdf")
+ggsave(filename, cor_scale)
+```
+
+#Neonatal complications supp table
+```{r}
+get_counts <- function(x) {
+  counts <- table(factor(x, levels = c(0,1,999)), useNA = "ifany")
+  as.numeric(counts)
+}
+
+neonatal_vars <- c("devhx_14a3_p", "devhx_14b3_p", "devhx_14c3_p", "devhx_14d3_p", "devhx_14e3_p", "devhx_14f3_p", "devhx_14g3_p", "devhx_14h3_p")
+abcd_neonatal <- read_csv("/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/abcd_long_afterQC_neonatal_baseline.csv")
+
+#table for counts for each question (before splits)
+counts_before <- t(sapply(abcd_neonatal[, neonatal_vars], get_counts))
+colnames(counts_before) <- c("0_before", "1_before", "999_before", "NA_before")
+
+#merge with t1 for post-split data Ns
+abcd_neonatal_post_split <- merge(
+  t1.full_test_df %>% select("src_subject_id", "neonatal_comp_total"),
+  abcd_neonatal %>% select(all_of(c("src_subject_id", neonatal_vars))),
+  by = "src_subject_id",
+  all.x = TRUE
+)
+
+##histogram
+ggplot(t1.full_test_df, aes(x = neonatal_comp_total)) + 
+  geom_bar() +
+  theme_minimal()
+
+#table for NAs and "don't know"s for each question (after splits -- more subjects removed)
+counts_after <- t(sapply(abcd_neonatal_post_split[, neonatal_vars], get_counts))
+colnames(counts_after) <- c("0_after", "1_after", "999_after", "NA_after")
+
+#combine into one table
+counts_table <- cbind(counts_before, counts_after)
+
+# neonatal vars as column
+#counts_table <- cbind(neonatal_variable = rownames(counts_table), counts_table)
+
+write.csv(counts_table, paste0(tableOne_folder,"neonatal_counts_supp_table.csv"), row.names = TRUE)
+```
