@@ -8,8 +8,8 @@ editor_options:
 ---
 #Main Setup
 ```{r setup, include=FALSE}
-save_tables <- TRUE
-save_figures <- TRUE
+save_tables <- FALSE
+save_figures <- FALSE
 code_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/longitudinal-models-abcd/"
 save_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/3.0_results/"
 data_path <- "/mnt/isilon/bgdlab_processing/Eren/ABCD-braincharts/CSV/process_tables_5.1_2.0/update/"
@@ -535,10 +535,10 @@ long.full_test_df <- merge(long.full_test_df,
 ```{r}
 t1.full_test_df <- merge(t1.full_test_df, 
                          long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
-                         by = "src_subject_id")
+                         by = "src_subject_id", all.x = TRUE)
 t2.full_test_df <- merge(t2.full_test_df, 
                          long.full_test_df %>% select(src_subject_id, grep("change", names(long.full_test_df))),
-                         by = "src_subject_id")
+                         by = "src_subject_id", all.x = TRUE)
 ```
 
 ## Define vectors for names of centile vars for all models
@@ -559,13 +559,13 @@ full.df <- merge(t1.full_test_df %>% rename(age.t1 = age, site.t1 = site, Genera
                   t2.full_test_df %>% rename(age.t2 = age, site.t2 = site, General_p.t2 = General_p) %>%
                    select(all_of(c("src_subject_id", "age.t2", "site.t2", "General_p.t2",
                                    names.t2, names))),
-                 by = "src_subject_id", all.x = TRUE, suffixes = c(".t1",".t2"))
+                 by = "src_subject_id", suffixes = c(".t1",".t2"))
 
 #add longitudinal centiles
 full.df <- merge(full.df, 
                  long.full_test_df %>% 
                    select(all_of(c("src_subject_id", names.long, "interscan_months_t1t2", "General_p_change"))),
-                 by = "src_subject_id", all.x = TRUE)
+                 by = "src_subject_id")
 ```
 
 ##SES Variables
@@ -745,7 +745,6 @@ table1_df <- rbind(t1.full_test_df %>% select(all_of(table_vars)),
   mutate(table_group = factor(table_group, levels = c("1_t1", "2_t1", "1_t2", "2_t2"))) %>%
   arrange(table_group)
 
-
 # Create Table 1 with additional variables
 table1 <- table1_df %>%
   select(table_group, age_years, sex, gestAge, bwpgs_zscore, birth_weight_oz_sum_adj, neonatal_comp_total, General_p) %>%
@@ -755,7 +754,7 @@ table1 <- table1_df %>%
       all_continuous() ~ "{mean} ({sd})",
       all_categorical() ~ "{n} ({p}%)"
     ),
-    digits = c(bwpgs_zscore, General_p) ~ function(x) format(x, digits = 3, scientific = TRUE),
+    digits = c(bwpgs_zscore, General_p) ~ function(x) format(x, digits = 10),
     missing = "always",
     missing_stat = "{N_nonmiss}", 
     missing_text = "N known"
@@ -834,7 +833,7 @@ for (x in qnorm_vars){
   full.df[full.df[,x] == 1 & !is.na(full.df[,x]), x] <- 0.99999999999999994
 }
 ```
-
+ 
 ## zscore centiles (new df)
 ```{r, echo = FALSE}
 # zscore centiles and other variables of interest
@@ -1133,7 +1132,13 @@ cor_df$t2_long.p_adj <- p.adjust(cor_df$t2_long.p, method = "BH")
 
 print(paste0("Correlation Coef Range t1-t2 centiles: ", range(cor_df[cor_df$t1_t2.p_adj < 0.05,]$t1_t2.cor)))
 print(paste0("Correlation Coef Range t1-(t2-t1 diff) centiles ", range(cor_df[cor_df$t1_diff.p_adj < 0.05,]$t1_diff.cor)))
+print(paste0("P val for min corr t1-(t2-t1 diff) centiles: ", cor_df[which(cor_df$t1_diff.cor == min(cor_df[cor_df$t1_diff.p_adj < 0.05,"t1_diff.cor"])),"t1_diff.p_adj"]))
+print(paste0("P val for max corr t1-(t2-t1 diff) centiles: ", cor_df[which(cor_df$t1_diff.cor == max(cor_df[cor_df$t1_diff.p_adj < 0.05,"t1_diff.cor"])),"t1_diff.p_adj"]))
+
 print(paste0("Correlation Coef Range t1-long centiles: ", range(cor_df[cor_df$t1_long.p_adj < 0.05,]$t1_long.cor)))
+print(paste0("P val for min corr t1-long centiles: ", cor_df[which(cor_df$t1_long.cor == min(cor_df[cor_df$t1_long.p_adj < 0.05,"t1_long.cor"])),"t1_long.p_adj"]))
+print(paste0("P val for max corr t1-long centiles: ", cor_df[which(cor_df$t1_long.cor == max(cor_df[cor_df$t1_long.p_adj < 0.05,"t1_long.cor"])),"t1_long.p_adj"]))
+
 print(paste0("Correlation Coef Range t2-long centiles: ", range(cor_df[cor_df$t2_long.p_adj < 0.05,]$t2_long.cor)))
 ```
 
@@ -1575,64 +1580,6 @@ if(save_figures == TRUE){
 ggsave(plot=supp_all_long_cent_plot, filename=paste0(revisions_panels_folder,'supfig1_long_cent_plot.svg'), dpi=300, width=10, height=16, device = "svg")
 ggsave(plot=supp_all_long_cent_plot_widelimits, filename=paste0(revisions_panels_folder,'supfig1_long_cent_plot_widelimits.svg'), dpi=300, width=10, height=16, device = "svg")
 }
-```
-
-#Save scale images
-### -0.23 to 0.23
-```{r}
-# Create dummy data just to generate the colorbar
-df <- data.frame(x = 1, y = 1, beta = 0)
-
-beta_scale <- ggplot(df, aes(x, y, fill = beta)) +
-  geom_tile() +
-  scale_fill_gradient2(
-    low = "#4878CF",
-    mid = "white",
-    high = "#D65F5F",
-    midpoint = 0,
-    limits = c(-0.23, 0.23),
-    guide = guide_colorbar(
-      barwidth = 1,   # length of colorbar
-      barheight = 20    # thickness
-    )
-  ) +
-  theme_void() +  # remove axes, grid, etc.
-  theme(
-    legend.position = "right",
-    legend.text = element_text(size = 14),
-    legend.title = element_text(size = 16)
-  )
-beta_scale
-filename <- paste0(figures_grids_folder, "beta_scale.pdf")
-ggsave(filename, beta_scale)
-```
-### -1 to 1
-```{r}
-# Create dummy data just to generate the colorbar
-df <- data.frame(x = 1, y = 1, corr = 0)
-
-cor_scale <- ggplot(df, aes(x, y, fill = corr)) +
-  geom_tile() +
-  scale_fill_gradient2(
-    low = "#4878CF",
-    mid = "white",
-    high = "#D65F5F",
-    midpoint = 0,
-    limits = c(-1, 1),
-    guide = guide_colorbar(
-      barwidth = 20,   # length of colorbar
-      barheight = 1    # thickness
-    )
-  ) +
-  theme_void() +  # remove axes, grid, etc.
-  theme(
-    legend.position = "bottom",
-    legend.text = element_text(size = 14),
-    legend.title = element_text(size = 14)
-  )
-cor_scale
-filename <- paste0(figures_grids_folder, "cor_scale.pdf")
-ggsave(filename, cor_scale)
 ```
 
 #Neonatal complications supp table
